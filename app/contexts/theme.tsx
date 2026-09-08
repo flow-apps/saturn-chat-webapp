@@ -7,6 +7,7 @@ import React, {
   useState,
 } from "react";
 import { ThemeProvider } from "styled-components";
+import { GlobalStyle } from "~/global";
 import dark from "../styles/themes/dark";
 import light from "../styles/themes/light";
 
@@ -16,34 +17,42 @@ interface ThemeControllerContextData {
 }
 
 const ThemeControllerContext = createContext<ThemeControllerContextData>(
-  {} as ThemeControllerContextData
+  {} as ThemeControllerContextData,
 );
 
-export const ThemeControllerProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const ThemeControllerProvider: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => {
   const [themeName, setThemeName] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const savedTheme = localStorage.getItem("@SaturnChat:theme") as "light" | "dark" | null;
+    const savedTheme = localStorage.getItem("@SaturnChat:theme") as
+      | "light"
+      | "dark"
+      | null;
 
     if (savedTheme) {
       setThemeName(savedTheme);
-    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+    } else if (
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: light)").matches
+    ) {
       setThemeName("light");
+    } else {
+      setThemeName("dark");
     }
   }, []);
 
   const toggleTheme = useCallback(() => {
     setThemeName((prevTheme) => {
       const nextTheme = prevTheme === "light" ? "dark" : "light";
-      
+
       if (typeof window !== "undefined") {
         localStorage.setItem("@SaturnChat:theme", nextTheme);
       }
-      
+
       return nextTheme;
     });
   }, []);
@@ -53,7 +62,7 @@ export const ThemeControllerProvider: React.FC<{ children: React.ReactNode }> = 
       dark,
       light,
     }),
-    []
+    [],
   );
 
   const currentTheme = themes[themeName] || themes.dark;
@@ -68,6 +77,7 @@ export const ThemeControllerProvider: React.FC<{ children: React.ReactNode }> = 
     <ThemeControllerContext.Provider
       value={{ toggleTheme, currentThemeName: themeName }}
     >
+      <GlobalStyle />
       <ThemeProvider theme={currentTheme}>{children}</ThemeProvider>
     </ThemeControllerContext.Provider>
   );

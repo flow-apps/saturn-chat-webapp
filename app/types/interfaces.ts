@@ -1,11 +1,9 @@
-import { ParticipantData } from "@pages/Home";
 import {
   FriendsStates,
   GroupCategory,
   ParticipantRoles,
   ParticipantStates,
 } from "./enums";
-import { Socket } from "socket.io-client";
 
 export interface UserData {
   id: string;
@@ -85,7 +83,7 @@ export interface MessageData {
   created_at: string;
   author: UserData;
   author_id?: string;
-  participant: ParticipantData;
+  // participant: ParticipantData;
   group: GroupData;
   reply_to?: MessageData;
   voice_message?: AudioData;

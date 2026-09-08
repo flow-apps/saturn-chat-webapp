@@ -1,12 +1,12 @@
 import React from "react";
-import { createBrowserRouter } from "react-router";
-
-// import { Container } from './styles';
+import { Container } from "./styles";
 
 const Login: React.FC = () => {
-  return <div>
-    <h1>Essa é a página de login</h1>
-  </div>;
+  return (
+    <Container>
+      <h1>Essa é a página de login</h1>
+    </Container>
+  );
 };
 
 export default Login;
