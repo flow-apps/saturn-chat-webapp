@@ -63,3 +63,17 @@ export const NewAccountContainer = styled.div`
     font-weight: bold;
   }
 `;
+
+export const ErrorContainer = styled.div`
+  background-color: rgba(255, 51, 51, 0.1);
+  border: 1px solid #ff3333;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+`;
+
+export const ErrorText = styled.p`
+  color: #ff3333;
+  font-size: 13px;
+  text-align: center;
+`;
