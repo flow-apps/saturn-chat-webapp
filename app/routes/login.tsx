@@ -1,16 +1,13 @@
 import type { Route } from "./+types/home";
+import Login from "~/pages/Auth/Login";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
+    { title: "Login Page" },
     { name: "description", content: "Welcome to React Router!" },
   ];
 }
 
-export default function Home() {
-  return (
-    <div>
-      <h1>Esta será a tela de chat</h1>
-    </div>
-  );
+export default function LoginPage() {
+  return <Login />;
 }
