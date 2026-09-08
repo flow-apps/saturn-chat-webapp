@@ -31,4 +31,8 @@ export const GlobalStyle = createGlobalStyle`
   button {
     cursor: pointer;
   }
+
+  h1, h2, h3 {
+    font-family: "Roboto", sans-serif;
+  }
 `;
