@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import Cookies from "js-cookie";
 import api from "@services/api";
 import * as auth from "@services/auth";
 import { AxiosError } from "axios";
 import configs from "~/config";
 import { UserData } from "@customtypes/interfaces";
 
-// Variável global/instância do websocket (garanta que esteja importada do seu projeto se necessário)
 declare const websocket: any;
 
 interface AuthContextData {
@@ -31,6 +31,9 @@ interface AuthContextData {
   signOut: () => void;
 }
 
+const TOKEN_COOKIE_KEY = "@SaturnChat:token";
+const USER_STORAGE_KEY = "@SaturnChat:user";
+
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -48,11 +51,14 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   const loadStorageData = () => {
-    setLoadingData(true);
-    const storageUser = localStorage.getItem("@SaturnChat:user");
-    const storageToken = localStorage.getItem("@SaturnChat:token");
+    if (typeof window === "undefined") return;
 
-    if (storageUser && storageToken) {
+    setLoadingData(true);
+
+    const storageToken = Cookies.get(TOKEN_COOKIE_KEY);
+    const storageUser = localStorage.getItem(USER_STORAGE_KEY);
+
+    if (storageToken && storageUser) {
       const headerToken = `Bearer ${storageToken}`;
       const parsedUser = JSON.parse(storageUser);
 
@@ -68,25 +74,36 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setToken(headerToken);
       setUser(parsedUser);
     }
+
     setLoadingData(false);
   };
 
   const updateUser = async (data: { token?: string; user: UserData }) => {
-    if (data.token) {
-      const headerToken = `Bearer ${data.token}`;
-      localStorage.setItem("@SaturnChat:token", data.token);
+    if (typeof window !== "undefined") {
+      if (data.token) {
+        const headerToken = `Bearer ${data.token}`;
 
-      api.defaults.headers.common["authorization"] = headerToken;
-      if (typeof websocket !== "undefined") {
-        if (!websocket.query) {
-          websocket.query = {};
+        Cookies.set(TOKEN_COOKIE_KEY, data.token, {
+          expires: 7,
+          sameSite: "lax",
+          secure: window.location.protocol === "https:",
+        });
+
+        api.defaults.headers.common["authorization"] = headerToken;
+
+        if (typeof websocket !== "undefined") {
+          if (!websocket.query) {
+            websocket.query = {};
+          }
+          websocket.query.token = headerToken;
         }
-        websocket.query.token = headerToken;
+
+        setToken(headerToken);
       }
-      setToken(headerToken);
+
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
     }
 
-    localStorage.setItem("@SaturnChat:user", JSON.stringify(data.user));
     setUser(data.user);
   };
 
@@ -114,7 +131,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const signUp = async (data: FormData) => {
+  const signUp = async (data: FormData, email: string) => {
     setLoading(true);
     setRegisterError(false);
 
@@ -145,8 +162,10 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.error("Erro ao desregistrar notificações:", error);
     } finally {
-      localStorage.removeItem("@SaturnChat:user");
-      localStorage.removeItem("@SaturnChat:token");
+      if (typeof window !== "undefined") {
+        Cookies.remove(TOKEN_COOKIE_KEY);
+        localStorage.removeItem(USER_STORAGE_KEY);
+      }
 
       api.defaults.headers.common["authorization"] = "";
       if (typeof websocket !== "undefined" && websocket.query) {
