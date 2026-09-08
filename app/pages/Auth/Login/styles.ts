@@ -53,3 +53,13 @@ export const LoginForm = styled.form``;
 export const InputContainer = styled.div`
   margin-top: 15px;
 `;
+
+export const NewAccountContainer = styled.div`
+  text-align: center;
+  margin-top: 30px;
+
+  a {
+    color: ${(props) => props.theme.colors.secondary};
+    font-weight: bold;
+  }
+`;
