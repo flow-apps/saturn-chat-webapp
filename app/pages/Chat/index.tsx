@@ -150,12 +150,10 @@ export const Chat: React.FC = () => {
     const { scrollTop, scrollHeight, clientHeight } =
       scrollContainerRef.current;
 
-    // Em containers com column-reverse, rolar para cima torna o scrollTop negativo
     const absScrollTop = Math.abs(scrollTop);
     const isUp = absScrollTop > 200;
     setShowScrollToBottom(isUp);
 
-    // Detecta se o scroll chegou ao topo do histórico (máximo de rolagem para cima)
     const isAtTop = absScrollTop + clientHeight >= scrollHeight - 50;
 
     if (isAtTop && !fetching && !fetchedAll) {
@@ -527,7 +525,7 @@ export const Chat: React.FC = () => {
 
       {/* HEADER DO CHAT */}
       <ChatHeader>
-        <IconButton title="Voltar" onClick={() => navigate(-1)}>
+        <IconButton title="Voltar" onClick={() => navigate("/")}>
           <ArrowLeft size={22} />
         </IconButton>
 

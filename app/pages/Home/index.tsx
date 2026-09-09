@@ -102,7 +102,7 @@ export const Home: React.FC = () => {
               {groups.map((group) => (
                 <QuickAccessGroup
                   key={group.id}
-                  to={`/${group.id}`}
+                  to={`/chat/${group.id}`}
                   title={group.name}
                 >
                   <img

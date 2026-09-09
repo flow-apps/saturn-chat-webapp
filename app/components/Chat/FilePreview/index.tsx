@@ -1,5 +1,4 @@
 import React, { useCallback, useState, useEffect } from "react";
-import { useNavigate } from "react-router";
 import {
   Image,
   FileText,
@@ -9,6 +8,8 @@ import {
   Download,
   PlayCircle,
   FileSpreadsheet,
+  X,
+  ExternalLink,
 } from "lucide-react";
 
 import { convertBytesToMB } from "~/utils/convertSize";
@@ -28,6 +29,16 @@ import {
   FileImagePreview,
   VideoPreviewWrapper,
   PlayIconOverlay,
+  // Componentes do Modal
+  Overlay,
+  ModalContainer,
+  ModalHeader,
+  ModalHeaderButton,
+  ModalTitle,
+  ModalMediaContent,
+  ModalImage,
+  ModalVideo,
+  ModalIFrame,
 } from "./styles";
 
 interface IFilePreviewProps {
@@ -42,6 +53,8 @@ interface IFilePreviewProps {
   conversationType: "GROUP" | "DIRECT";
 }
 
+type ModalType = "image" | "video" | "pdf" | null;
+
 const FilePreview = ({
   name,
   original_name,
@@ -55,11 +68,11 @@ const FilePreview = ({
   const [downloadWarning, setDownloadWarning] = useState(false);
   const [protectedObjectUrl, setProtectedObjectUrl] = useState<string>("");
   const [loadingMedia, setLoadingMedia] = useState<boolean>(false);
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
 
-  const navigate = useNavigate();
   const { token } = useAuth();
 
-  // Busca a mídia enviando os headers de autenticação e gera uma Object URL local
+  // Carrega mídias com cabeçalho de autenticação
   useEffect(() => {
     let isMounted = true;
     let createdUrl = "";
@@ -67,7 +80,6 @@ const FilePreview = ({
     const fetchProtectedMedia = async () => {
       if (!url) return;
 
-      // Se a URL já for um blob local ou base64, utiliza diretamente
       if (url.startsWith("blob:") || url.startsWith("data:")) {
         setProtectedObjectUrl(url);
         return;
@@ -103,7 +115,6 @@ const FilePreview = ({
 
     fetchProtectedMedia();
 
-    // Revoga a Object URL para evitar vazamentos de memória no navegador
     return () => {
       isMounted = false;
       if (createdUrl) {
@@ -111,6 +122,23 @@ const FilePreview = ({
       }
     };
   }, [url, token]);
+
+  // Tecla 'Escape' fecha o modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && activeModal) {
+        setActiveModal(null);
+      }
+    };
+
+    if (activeModal) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [activeModal]);
 
   const handleDownloadFile = () => {
     setDownloadWarning(true);
@@ -121,15 +149,11 @@ const FilePreview = ({
     if (!url) return;
 
     try {
-      console.log(token);
-      
       const response = await fetch(url, {
         headers: {
-          Authorization: `${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
-
-      
 
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
@@ -152,31 +176,11 @@ const FilePreview = ({
     }
   }, [url, token, original_name, name, protectedObjectUrl]);
 
-  const handleGoImagePreview = () => {
-    const targetUrl = protectedObjectUrl || url || "";
-    navigate(
-      `/preview/image?url=${encodeURIComponent(
-        targetUrl
-      )}&title=${encodeURIComponent(original_name)}`
-    );
-  };
-
-  const handleGoVideoPreview = () => {
-    const targetUrl = protectedObjectUrl || url || "";
-    navigate(
-      `/preview/video?url=${encodeURIComponent(
-        targetUrl
-      )}&title=${encodeURIComponent(original_name)}`
-    );
-  };
-
-  const handleGoPdfPreview = () => {
-    const targetUrl = protectedObjectUrl || url || "";
-    navigate(
-      `/preview/pdf?url=${encodeURIComponent(
-        targetUrl
-      )}&title=${encodeURIComponent(original_name)}`
-    );
+  const handleOpenExternal = () => {
+    const mediaSrc = protectedObjectUrl || url;
+    if (mediaSrc) {
+      window.open(mediaSrc, "_blank", "noopener,noreferrer");
+    }
   };
 
   const renderIcon = () => {
@@ -196,13 +200,13 @@ const FilePreview = ({
     }
   };
 
-  const renderPreview = () => {
+  const renderPreviewButton = () => {
     const mediaSrc = protectedObjectUrl || url;
 
     if (type === "image") {
       return (
         <FileButton
-          onClick={handleGoImagePreview}
+          onClick={() => setActiveModal("image")}
           title="Ver imagem"
           disabled={loadingMedia}
         >
@@ -218,12 +222,16 @@ const FilePreview = ({
     if (type === "video") {
       return (
         <FileButton
-          onClick={handleGoVideoPreview}
+          onClick={() => setActiveModal("video")}
           title="Assistir vídeo"
           disabled={loadingMedia}
         >
           <VideoPreviewWrapper>
-            <video src={mediaSrc ? `${mediaSrc}#t=0.5` : undefined} preload="metadata" muted />
+            <video
+              src={mediaSrc ? `${mediaSrc}#t=0.5` : undefined}
+              preload="metadata"
+              muted
+            />
             <PlayIconOverlay>
               <PlayCircle size={22} color="#ffffff" />
             </PlayIconOverlay>
@@ -234,7 +242,11 @@ const FilePreview = ({
 
     if (type === "application" && name.endsWith(".pdf")) {
       return (
-        <FileButton onClick={handleGoPdfPreview} title="Abrir PDF">
+        <FileButton
+          onClick={() => setActiveModal("pdf")}
+          title="Abrir PDF"
+          disabled={loadingMedia}
+        >
           <FileText size={26} color="#ef4444" />
         </FileButton>
       );
@@ -245,6 +257,25 @@ const FilePreview = ({
         <Download size={22} />
       </FileButton>
     );
+  };
+
+  const renderModalContent = () => {
+    const mediaSrc = protectedObjectUrl || url;
+    if (!mediaSrc) return null;
+
+    if (activeModal === "image") {
+      return <ModalImage src={mediaSrc} alt={original_name} />;
+    }
+
+    if (activeModal === "video") {
+      return <ModalVideo src={mediaSrc} controls autoPlay />;
+    }
+
+    if (activeModal === "pdf") {
+      return <ModalIFrame src={mediaSrc} title={original_name} />;
+    }
+
+    return null;
   };
 
   return (
@@ -266,7 +297,7 @@ const FilePreview = ({
             <FileName title={original_name}>{original_name}</FileName>
             <FileSize>{convertBytesToMB(size)}</FileSize>
           </FileInfosContainer>
-          <FileOpenAction>{renderPreview()}</FileOpenAction>
+          <FileOpenAction>{renderPreviewButton()}</FileOpenAction>
         </FileContainer>
       </Container>
 
@@ -274,6 +305,40 @@ const FilePreview = ({
         <AudioPreview
           audio={{ name, url: String(protectedObjectUrl || url) }}
         />
+      )}
+
+      {/* MODAL DE PRÉ-VISUALIZAÇÃO */}
+      {activeModal && (
+        <Overlay onClick={() => setActiveModal(null)}>
+          <ModalContainer onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalHeaderButton
+                onClick={() => setActiveModal(null)}
+                title="Fechar"
+              >
+                <X size={22} />
+              </ModalHeaderButton>
+
+              <ModalTitle title={original_name}>{original_name}</ModalTitle>
+
+              <ModalHeaderButton
+                onClick={handleDownloadFile}
+                title="Baixar arquivo"
+              >
+                <Download size={20} />
+              </ModalHeaderButton>
+
+              <ModalHeaderButton
+                onClick={handleOpenExternal}
+                title="Abrir em nova aba"
+              >
+                <ExternalLink size={20} />
+              </ModalHeaderButton>
+            </ModalHeader>
+
+            <ModalMediaContent>{renderModalContent()}</ModalMediaContent>
+          </ModalContainer>
+        </Overlay>
       )}
     </>
   );

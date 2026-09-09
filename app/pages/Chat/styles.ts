@@ -14,7 +14,7 @@ export const ChatHeader = styled.header`
   display: flex;
   align-items: center;
   padding: 10px 16px;
-  background-color: ${({ theme }) => theme.colors?.shape || "#18181b"};
+  background-color: ${({ theme }) => theme.colors?.primary || "#18181b"};
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   gap: 12px;
   z-index: 10;
