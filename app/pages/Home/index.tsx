@@ -1,14 +1,23 @@
 import React from "react";
-import Header from "~/components/Header";
 import Sidebar from "~/components/Sidebar";
 
-// import { Container } from './styles';
+import {
+  Container,
+  GroupsContainer,
+  GroupsTitle,
+  MainContainer,
+} from "./styles";
 
 const Home: React.FC = () => {
   return (
-    <>
+    <MainContainer>
       <Sidebar />
-    </>
+      <Container>
+        <GroupsContainer>
+          <GroupsTitle>Grupos</GroupsTitle>
+        </GroupsContainer>
+      </Container>
+    </MainContainer>
   );
 };
 

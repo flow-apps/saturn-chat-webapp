@@ -1,9 +1,12 @@
+import { Colord, colord } from "colord";
 import styled from "styled-components";
 
 export const Container = styled.aside`
   width: 72px;
   height: 100vh;
-  background-color: ${(props) => props.theme?.colors?.shape || "#18181b"};
+  /* @ts-ignore */
+  background-color: ${(props) =>
+    colord(props.theme?.colors?.shape).darken(0.05).toRgbString()};
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -50,7 +53,6 @@ export const IconButton = styled.div<{ $active?: boolean; $dashed?: boolean }>`
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 
-  /* Aplica borda pontilhada apenas se for o botão de adicionar e não estiver ativo */
   border: ${(props) =>
     props.$dashed && !props.$active
       ? `1.5px dashed ${props.theme?.colors?.light_heading || "#3f3f46"}`
