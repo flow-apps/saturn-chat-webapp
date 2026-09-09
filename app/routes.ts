@@ -10,5 +10,11 @@ export default [
     route("login", "routes/login.tsx"),
     route("register", "routes/register.tsx"),
   ]),
-  layout("routes/ProtectedRoute.tsx", [index("routes/home.tsx")]),
+  layout("routes/ProtectedRoute.tsx", [
+    route("/", "pages/Home/index.tsx", [
+      // Rota padrão (quando nenhum chat está selecionado)
+      index("pages/Home/components/NoChatSelected/index.tsx"),
+      route("chat/:id", "pages/Chat/index.tsx"),
+    ]),
+  ]),
 ] satisfies RouteConfig;

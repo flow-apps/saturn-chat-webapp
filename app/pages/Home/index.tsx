@@ -61,7 +61,7 @@ export const Home: React.FC = () => {
   }, [loadGroups]);
 
   const handleGoChat = (id: string) => {
-    navigate(`/${id}`);
+    navigate(`/chat/${id}`);
   };
 
   const handleGoNewGroup = () => {

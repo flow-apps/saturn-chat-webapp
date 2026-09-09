@@ -159,3 +159,11 @@ export const EmptyLink = styled.span`
     opacity: 0.8;
   }
 `;
+
+export const ChatArea = styled.section`
+  flex: 1;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: ${(props) => props.theme.colors.background || "#0f0f12"};
+`;
