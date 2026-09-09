@@ -1,29 +1,22 @@
+// services/api.ts
 import axios from "axios";
+import Cookies from "js-cookie";
 
-// const API_PREFERENCE_KEY = "@SaturnChat:useDevApi";
-
-// const DEV_API_URL = config.DEV_API_URL;
+const TOKEN_COOKIE_KEY = "@SaturnChat:token";
 
 const api = axios.create({
-  baseURL: "http://localhost:3000/",
+  baseURL: "http://localhost:3000", // Substitua pela sua URL base
 });
 
-// export const setApiBaseURL = async (useDev: boolean) => {
-//   const newBaseURL = useDev ? DEV_API_URL : config.PROD_API_URL;
-//   api.defaults.baseURL = newBaseURL;
-//   await AsyncStorage.setItem(API_PREFERENCE_KEY, JSON.stringify(useDev));
-//   console.log(`API Base URL set to: ${newBaseURL}`);
-// };
-
-// (async () => {
-//   try {
-//     const storedPreference = await AsyncStorage.getItem(API_PREFERENCE_KEY);
-//     const useDev = storedPreference && __DEV__ ? JSON.parse(storedPreference) : false;
-//     await setApiBaseURL(useDev);
-//   } catch (error) {
-//     console.error("Failed to load API preference from AsyncStorage", error);
-//     await setApiBaseURL(false);
-//   }
-// })();
+// Interceptor para injetar o Token dinamicamente em TODAS as requisições
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = Cookies.get(TOKEN_COOKIE_KEY);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
 
 export default api;

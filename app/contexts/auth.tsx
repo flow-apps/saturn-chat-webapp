@@ -34,14 +34,28 @@ interface AuthContextData {
 const TOKEN_COOKIE_KEY = "@SaturnChat:token";
 const USER_STORAGE_KEY = "@SaturnChat:user";
 
+// Funções para leitura síncrona na inicialização do estado no browser
+const getInitialToken = (): string => {
+  if (typeof window === "undefined") return "";
+  const storageToken = Cookies.get(TOKEN_COOKIE_KEY);
+  return storageToken ? `Bearer ${storageToken}` : "";
+};
+
+const getInitialUser = (): UserData | null => {
+  if (typeof window === "undefined") return null;
+  const storageUser = localStorage.getItem(USER_STORAGE_KEY);
+  return storageUser ? JSON.parse(storageUser) : null;
+};
+
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [token, setToken] = useState("");
-  const [user, setUser] = useState<UserData | null>(null);
-  const [loadingData, setLoadingData] = useState(true);
+  // Inicialização síncrona dos estados para evitar perda de token no F5 / SSR Hydration
+  const [token, setToken] = useState<string>(getInitialToken);
+  const [user, setUser] = useState<UserData | null>(getInitialUser);
+  const [loadingData, setLoadingData] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState(false);
   const [registerError, setRegisterError] = useState(false);
@@ -52,8 +66,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const loadStorageData = () => {
     if (typeof window === "undefined") return;
-
-    setLoadingData(true);
 
     const storageToken = Cookies.get(TOKEN_COOKIE_KEY);
     const storageUser = localStorage.getItem(USER_STORAGE_KEY);
@@ -74,8 +86,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setToken(headerToken);
       setUser(parsedUser);
     }
-
-    setLoadingData(false);
   };
 
   const updateUser = async (data: { token?: string; user: UserData }) => {
