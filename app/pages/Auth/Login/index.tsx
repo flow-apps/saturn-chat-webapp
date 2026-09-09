@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from "react";
+import React, { useState, FormEvent, useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router";
 import { useAuth } from "~/contexts/auth";
 import Header from "~/components/Header";
@@ -25,24 +25,24 @@ const Login: React.FC = () => {
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const { signIn, loading, loginError, internalError } = useAuth();
+  const { signIn, loading, loginError, internalError, signed } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Pega a rota que o usuário tentou acessar previamente ou redireciona para a home "/"
   const from = location.state?.from?.pathname || "/";
+
+  useEffect(() => {
+    if (signed) {
+      navigate(from, { replace: true });
+    }
+  }, [signed, navigate, from]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!emailOrUsername.trim() || !password) return;
 
-    try {
-      await signIn(emailOrUsername, password);
-      navigate(from, { replace: true });
-    } catch (error) {
-      console.error("Erro ao realizar login:", error);
-    }
+    await signIn(emailOrUsername, password);
   };
 
   const isButtonEnabled = !!emailOrUsername.trim() && !!password;
@@ -67,7 +67,6 @@ const Login: React.FC = () => {
               </LoginCardSubtitle>
 
               <LoginForm onSubmit={handleSubmit}>
-                {/* TRATAMENTO DE ERROS */}
                 {loginError && !internalError?.has && (
                   <ErrorContainer>
                     <ErrorText>

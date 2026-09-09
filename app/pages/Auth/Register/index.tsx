@@ -1,5 +1,5 @@
 import React, { useEffect, useState, ChangeEvent, FormEvent } from "react";
-import { NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 import { Camera } from "lucide-react";
 import { useTheme } from "styled-components";
 import { useAuth } from "~/contexts/auth";
@@ -43,6 +43,10 @@ import {
 } from "./styles";
 
 const Register: React.FC = () => {
+  const navigate = useNavigate();
+  const { signUp, loading, registerError, internalError, signed } = useAuth();
+  const { colors } = useTheme();
+
   // --- STATES DE FORMULÁRIO ---
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -64,15 +68,19 @@ const Register: React.FC = () => {
   const [nicknameError, setNicknameError] = useState(false);
   const [fetchingNickname, setFetchingNickname] = useState(false);
 
-  const { colors } = useTheme();
-  const { signUp, loading, registerError, internalError } = useAuth();
-
   const nicknameErrors = {
     400: "O nome de usuário aceita apenas letras, números, '-' e '_'",
     404: "O nome de usuário não foi fornecido",
     1000: "Não foi possível buscar o nome de usuário",
     unavailable: "O nome de usuário não está disponível",
   };
+
+  // Redireciona quando a conta é criada com sucesso e o usuário fica logado
+  useEffect(() => {
+    if (signed) {
+      navigate("/", { replace: true });
+    }
+  }, [signed, navigate]);
 
   // --- VERIFICAÇÃO DE NICKNAME NA API ---
   const checkNickname = async (nick: string) => {
@@ -117,7 +125,7 @@ const Register: React.FC = () => {
       .finally(() => setFetchingNickname(false));
   };
 
-  // --- HANDLERS COM VALIDAÇÃO REGEX ---
+  // --- HANDLERS DE VALIDAÇÃO ---
   const handleSetEmail = (value: string) => {
     setEmail(value);
     if (value.length > 0 && !emailValidation.test(value)) {
@@ -203,18 +211,23 @@ const Register: React.FC = () => {
     };
   }, [nickname]);
 
-  // --- SELEÇÃO DE AVATAR (COM LIMITE DE 5 MB) ---
+  // --- SELEÇÃO DE AVATAR (COM LIMPEZA DE MEMÓRIA E LIMITE DE 5 MB) ---
   const handleSelectAvatar = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB em bytes
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
       if (file.size > MAX_FILE_SIZE) {
         setAvatarError("A foto selecionada deve ter no máximo 5 MB.");
+        if (avatarPreview) URL.revokeObjectURL(avatarPreview);
         setAvatar(null);
         setAvatarPreview(null);
         e.target.value = "";
         return;
+      }
+
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
       }
 
       setAvatarError(null);
@@ -223,7 +236,14 @@ const Register: React.FC = () => {
     }
   };
 
-  // --- SUBMIT ---
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -276,20 +296,18 @@ const Register: React.FC = () => {
               </RegisterCardSubtitle>
 
               <RegisterForm onSubmit={handleSubmit}>
-                {/* SELETOR DE AVATAR */}
                 <SelectAvatarContainer>
-                  <SelectAvatarButton type="button">
-                    <label htmlFor="avatar-upload">
-                      {avatarPreview ? (
-                        <Avatar src={avatarPreview} alt="Preview Avatar" />
-                      ) : (
-                        <Camera
-                          size={55}
-                          color={colors?.secondary || "#00b4d8"}
-                        />
-                      )}
-                    </label>
+                  <SelectAvatarButton as="label" htmlFor="avatar-upload">
+                    {avatarPreview ? (
+                      <Avatar src={avatarPreview} alt="Preview Avatar" />
+                    ) : (
+                      <Camera
+                        size={55}
+                        color={colors?.secondary || "#00b4d8"}
+                      />
+                    )}
                   </SelectAvatarButton>
+
                   <input
                     id="avatar-upload"
                     type="file"
@@ -297,6 +315,7 @@ const Register: React.FC = () => {
                     onChange={handleSelectAvatar}
                     style={{ display: "none" }}
                   />
+
                   <SelectAvatarTitle>Foto de Perfil</SelectAvatarTitle>
                   <SelectAvatarSubtitle>
                     {!avatar
@@ -306,7 +325,6 @@ const Register: React.FC = () => {
                   {avatarError && <FieldError>{avatarError}</FieldError>}
                 </SelectAvatarContainer>
 
-                {/* ERROS GLOBAIS DE CONTEXTO */}
                 {registerError && !internalError?.has && (
                   <ErrorContainer>
                     <ErrorText>
