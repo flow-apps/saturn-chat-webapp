@@ -40,7 +40,7 @@ export const NavContainer = styled.nav`
   }
 `;
 
-export const IconButton = styled.div<{ $active?: boolean }>`
+export const IconButton = styled.div<{ $active?: boolean; $dashed?: boolean }>`
   width: 48px;
   height: 48px;
   border-radius: 16px;
@@ -50,9 +50,17 @@ export const IconButton = styled.div<{ $active?: boolean }>`
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 
+  /* Aplica borda pontilhada apenas se for o botão de adicionar e não estiver ativo */
+  border: ${(props) =>
+    props.$dashed && !props.$active
+      ? `1.5px dashed ${props.theme?.colors?.light_heading || "#3f3f46"}`
+      : "1.5px solid transparent"};
+
+  /* Fundo destacado em azul se estiver ativo */
   background-color: ${(props) =>
     props.$active ? props.theme?.colors?.primary || "#3b82f6" : "transparent"};
 
+  /* Cor do ícone */
   color: ${(props) =>
     props.$active
       ? "#ffffff"
@@ -64,28 +72,8 @@ export const IconButton = styled.div<{ $active?: boolean }>`
         ? props.theme?.colors?.primary || "#3b82f6"
         : "rgba(255, 255, 255, 0.05)"};
     color: #ffffff;
-  }
-`;
-
-export const NewChatButton = styled.button`
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  border: 1.5px dashed
-    ${(props) => props.theme?.colors?.light_heading || "#3f3f46"};
-  background: transparent;
-  color: ${(props) => props.theme?.colors?.light_heading || "#a1a1aa"};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  margin-top: 4px;
-
-  &:hover {
-    border-color: #ffffff;
-    color: #ffffff;
-    background-color: rgba(255, 255, 255, 0.05);
+    border-color: ${(props) =>
+      props.$dashed && !props.$active ? "#ffffff" : "transparent"};
   }
 `;
 
@@ -122,7 +110,7 @@ export const OnlineBadge = styled.span`
   right: 0;
   width: 12px;
   height: 12px;
-  background-color: #22c55e;
+  background-color: ${(props) => props.theme.colors.green};
   border: 2px solid ${(props) => props.theme?.colors?.shape || "#18181b"};
   border-radius: 50%;
 `;

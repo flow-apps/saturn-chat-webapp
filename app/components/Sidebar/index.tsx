@@ -1,15 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router";
-import {
-  MessageSquare,
-  UserPlus,
-  Compass,
-  Plus,
-  Settings,
-  Users2,
-  UserRoundPlus,
-  User2,
-} from "lucide-react";
+import { Compass, Plus, Settings, Users2, User2 } from "lucide-react";
 import { useAuth } from "~/contexts/auth";
 
 import {
@@ -20,7 +11,6 @@ import {
   LogoContainer,
   LogoImage,
   NavContainer,
-  NewChatButton,
   OnlineBadge,
   UserSection,
 } from "./styles";
@@ -35,7 +25,8 @@ export const Sidebar: React.FC = () => {
       </LogoContainer>
 
       <NavContainer>
-        <NavLink to="/chats" end>
+        {/* 1º Botão: / (Conversas) */}
+        <NavLink to="/" end>
           {({ isActive }) => (
             <IconButton $active={isActive} title="Conversas">
               <Users2 size={22} />
@@ -43,6 +34,7 @@ export const Sidebar: React.FC = () => {
           )}
         </NavLink>
 
+        {/* 2º Botão: /friends (Amigos) */}
         <NavLink to="/friends">
           {({ isActive }) => (
             <IconButton $active={isActive} title="Amigos">
@@ -51,7 +43,8 @@ export const Sidebar: React.FC = () => {
           )}
         </NavLink>
 
-        <NavLink to="/explore">
+        {/* 3º Botão: /explorer (Explorar) */}
+        <NavLink to="/explorer">
           {({ isActive }) => (
             <IconButton $active={isActive} title="Explorar">
               <Compass size={22} />
@@ -59,9 +52,14 @@ export const Sidebar: React.FC = () => {
           )}
         </NavLink>
 
-        <NewChatButton title="Nova grupo">
-          <Plus size={22} />
-        </NewChatButton>
+        {/* 4º Botão: /new-group (Novo Grupo) */}
+        <NavLink to="/new-group">
+          {({ isActive }) => (
+            <IconButton $active={isActive} $dashed title="Novo Grupo">
+              <Plus size={22} />
+            </IconButton>
+          )}
+        </NavLink>
       </NavContainer>
 
       <UserSection>
