@@ -16,7 +16,7 @@ export const MessageWrapper = styled.div<{ $isRight: boolean }>`
 export const Container = styled.div<{ $isRight: boolean }>`
   display: flex;
   flex-direction: column;
-  max-width: 65%;
+  max-width: 60%;
   align-items: ${(props) => (props.$isRight ? "flex-end" : "flex-start")};
   position: relative;
 `;

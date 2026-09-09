@@ -1,15 +1,69 @@
 import styled from "styled-components";
 
-export const MessageMarkContainer = styled.div<{ $isRight: boolean }>`
-  font-size: 14px;
-  line-height: 1.5;
+// 1. Defina a interface para a prop $isRight
+interface MessageContainerProps {
+  $isRight?: boolean;
+}
+
+// 2. Aplique a tipagem no styled component
+export const MessageMarkdownContainer = styled.div<MessageContainerProps>`
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
   word-break: break-word;
+  color: ${(props) => props.theme.colors.black};
+
+  /* Aplica o ajuste rígido para listas que ultrapassam o container */
+  ul,
+  ol {
+    margin: 4px 0;
+    padding-left: 18px;
+    list-style-position: outside;
+    box-sizing: border-box;
+  }
+
+  li {
+    margin-bottom: 2px;
+    padding-left: 2px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+
+    p {
+      display: inline;
+      margin: 0;
+      color: ${(props) => props.theme.colors.black};
+    }
+  }
+
+  p {
+    margin: 0 0 4px 0;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
 `;
 
-export const MessageContent = styled.p<{ $isRight: boolean }>`
+export const MessageContent = styled.p<MessageContainerProps>`
   margin: 0;
-  color: #ffffff;
-  white-space: pre-wrap;
+  color: ${(props) => props.theme.colors.black};
+`;
+
+export const ExpandButton = styled.button<MessageContainerProps>`
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+  color: ${({ theme, $isRight }) =>
+    $isRight
+      ? theme.colors?.secondary || "#00b4d8"
+      : theme.colors?.primary || "#3b82f6"};
+
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 export const MessageLink = styled.a`
@@ -45,19 +99,4 @@ export const MessageCodeBlockText = styled.code`
   font-family: monospace;
   font-size: 13px;
   white-space: pre;
-`;
-
-export const ExpandButton = styled.button<{ $isRight: boolean }>`
-  background: transparent;
-  border: none;
-  margin-top: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  color: ${(props) => (props.$isRight ? "#e0f2fe" : "#0284c7")};
-  cursor: pointer;
-  padding: 0;
-
-  &:hover {
-    text-decoration: underline;
-  }
 `;

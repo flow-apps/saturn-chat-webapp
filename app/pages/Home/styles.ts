@@ -20,7 +20,7 @@ export const GroupsContainer = styled.main`
   background-color: ${(props) => props.theme.colors.shape};
   height: 100vh;
   width: 450px;
-  min-width: 380px;
+  min-width: 450px;
   padding: 25px;
 
   display: flex;
@@ -163,6 +163,7 @@ export const EmptyLink = styled.span`
 export const ChatArea = styled.section`
   flex: 1;
   height: 100vh;
+  max-width: 50%;
   display: flex;
   flex-direction: column;
   background-color: ${(props) => props.theme.colors.background || "#0f0f12"};

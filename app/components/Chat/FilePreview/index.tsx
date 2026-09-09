@@ -1,9 +1,8 @@
-import React, { useCallback, useState, useMemo } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import {
   Image,
   FileText,
-  FileMinus,
   Video,
   Headphones,
   File as FileIcon,
@@ -15,6 +14,7 @@ import {
 import { convertBytesToMB } from "~/utils/convertSize";
 import CustomAlert from "~/components/Alert";
 import AudioPreview from "./AudioPreview";
+import { useAuth } from "~/contexts/auth";
 
 import {
   Container,
@@ -53,7 +53,64 @@ const FilePreview = ({
   conversationType,
 }: IFilePreviewProps) => {
   const [downloadWarning, setDownloadWarning] = useState(false);
+  const [protectedObjectUrl, setProtectedObjectUrl] = useState<string>("");
+  const [loadingMedia, setLoadingMedia] = useState<boolean>(false);
+
   const navigate = useNavigate();
+  const { token } = useAuth();
+
+  // Busca a mídia enviando os headers de autenticação e gera uma Object URL local
+  useEffect(() => {
+    let isMounted = true;
+    let createdUrl = "";
+
+    const fetchProtectedMedia = async () => {
+      if (!url) return;
+
+      // Se a URL já for um blob local ou base64, utiliza diretamente
+      if (url.startsWith("blob:") || url.startsWith("data:")) {
+        setProtectedObjectUrl(url);
+        return;
+      }
+
+      setLoadingMedia(true);
+
+      try {
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Erro ao carregar mídia autenticada");
+        }
+
+        const blob = await response.blob();
+        createdUrl = window.URL.createObjectURL(blob);
+
+        if (isMounted) {
+          setProtectedObjectUrl(createdUrl);
+        }
+      } catch (error) {
+        console.error("Erro no carregamento de mídia com cabeçalho:", error);
+      } finally {
+        if (isMounted) {
+          setLoadingMedia(false);
+        }
+      }
+    };
+
+    fetchProtectedMedia();
+
+    // Revoga a Object URL para evitar vazamentos de memória no navegador
+    return () => {
+      isMounted = false;
+      if (createdUrl) {
+        window.URL.revokeObjectURL(createdUrl);
+      }
+    };
+  }, [url, token]);
 
   const handleDownloadFile = () => {
     setDownloadWarning(true);
@@ -64,7 +121,16 @@ const FilePreview = ({
     if (!url) return;
 
     try {
-      const response = await fetch(url);
+      console.log(token);
+      
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `${token}`,
+        },
+      });
+
+      
+
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
 
@@ -77,21 +143,40 @@ const FilePreview = ({
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Erro ao baixar arquivo:", error);
-      // Fallback para abertura em nova aba se o CORS impedir fetch do Blob
-      window.open(url, "_blank");
+      if (protectedObjectUrl) {
+        const link = document.createElement("a");
+        link.href = protectedObjectUrl;
+        link.download = original_name || name;
+        link.click();
+      }
     }
-  }, [url, original_name, name]);
+  }, [url, token, original_name, name, protectedObjectUrl]);
 
   const handleGoImagePreview = () => {
-    navigate(`/preview/image?url=${encodeURIComponent(url || "")}&title=${encodeURIComponent(original_name)}`);
+    const targetUrl = protectedObjectUrl || url || "";
+    navigate(
+      `/preview/image?url=${encodeURIComponent(
+        targetUrl
+      )}&title=${encodeURIComponent(original_name)}`
+    );
   };
 
   const handleGoVideoPreview = () => {
-    navigate(`/preview/video?url=${encodeURIComponent(url || "")}&title=${encodeURIComponent(original_name)}`);
+    const targetUrl = protectedObjectUrl || url || "";
+    navigate(
+      `/preview/video?url=${encodeURIComponent(
+        targetUrl
+      )}&title=${encodeURIComponent(original_name)}`
+    );
   };
 
   const handleGoPdfPreview = () => {
-    navigate(`/preview/pdf?url=${encodeURIComponent(url || "")}&title=${encodeURIComponent(original_name)}`);
+    const targetUrl = protectedObjectUrl || url || "";
+    navigate(
+      `/preview/pdf?url=${encodeURIComponent(
+        targetUrl
+      )}&title=${encodeURIComponent(original_name)}`
+    );
   };
 
   const renderIcon = () => {
@@ -112,19 +197,33 @@ const FilePreview = ({
   };
 
   const renderPreview = () => {
+    const mediaSrc = protectedObjectUrl || url;
+
     if (type === "image") {
       return (
-        <FileButton onClick={handleGoImagePreview} title="Ver imagem">
-          <FileImagePreview src={url} alt={original_name} loading="lazy" />
+        <FileButton
+          onClick={handleGoImagePreview}
+          title="Ver imagem"
+          disabled={loadingMedia}
+        >
+          <FileImagePreview
+            src={mediaSrc}
+            alt={original_name}
+            loading="lazy"
+          />
         </FileButton>
       );
     }
 
     if (type === "video") {
       return (
-        <FileButton onClick={handleGoVideoPreview} title="Assistir vídeo">
+        <FileButton
+          onClick={handleGoVideoPreview}
+          title="Assistir vídeo"
+          disabled={loadingMedia}
+        >
           <VideoPreviewWrapper>
-            <video src={`${url}#t=0.5`} preload="metadata" muted />
+            <video src={mediaSrc ? `${mediaSrc}#t=0.5` : undefined} preload="metadata" muted />
             <PlayIconOverlay>
               <PlayCircle size={22} color="#ffffff" />
             </PlayIconOverlay>
@@ -171,7 +270,11 @@ const FilePreview = ({
         </FileContainer>
       </Container>
 
-      {type === "audio" && <AudioPreview audio={{ name, url: String(url) }} />}
+      {type === "audio" && (
+        <AudioPreview
+          audio={{ name, url: String(protectedObjectUrl || url) }}
+        />
+      )}
     </>
   );
 };

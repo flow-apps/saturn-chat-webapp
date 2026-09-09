@@ -87,10 +87,10 @@ export const MessagesScrollContainer = styled.div`
   overflow-y: auto;
   padding: 16px;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse; /* Força o alinhamento de baixo para cima */
   gap: 8px;
 
-  /* Customização de barra de rolagem */
+  /* Estilização da barra de rolagem */
   &::-webkit-scrollbar {
     width: 6px;
   }

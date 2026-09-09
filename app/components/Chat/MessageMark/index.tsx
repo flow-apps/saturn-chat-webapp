@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 
 import { MessageData, UserData, ParticipantsData } from "~/types/interfaces";
 import {
-  MessageMarkContainer,
+  MessageMarkdownContainer,
   MessageContent,
   MessageLink,
   MessageCodeInline,
@@ -85,7 +85,7 @@ const MessageMark = ({
   );
 
   return (
-    <MessageMarkContainer $isRight={isRight}>
+    <MessageMarkdownContainer $isRight={isRight}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -136,7 +136,7 @@ const MessageMark = ({
           {isExpanded ? "Ler menos" : "Ler mais"}
         </ExpandButton>
       )}
-    </MessageMarkContainer>
+    </MessageMarkdownContainer>
   );
 };
 

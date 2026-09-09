@@ -1,11 +1,12 @@
 // services/api.ts
 import axios from "axios";
 import Cookies from "js-cookie";
+import configs from "~/config";
 
 const TOKEN_COOKIE_KEY = "@SaturnChat:token";
 
 const api = axios.create({
-  baseURL: "http://localhost:3000", // Substitua pela sua URL base
+  baseURL: configs.PROD_API_URL, // Substitua pela sua URL base
 });
 
 // Interceptor para injetar o Token dinamicamente em TODAS as requisições

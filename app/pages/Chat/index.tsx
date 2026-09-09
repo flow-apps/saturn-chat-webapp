@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, Phone, Users, MoreVertical, ChevronDown } from "lucide-react";
+import {
+  ArrowLeft,
+  Phone,
+  Users,
+  MoreVertical,
+  ChevronDown,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import _ from "lodash";
 
@@ -87,7 +93,9 @@ export const Chat: React.FC = () => {
   const [sendingFile, setSendingFile] = useState<boolean>(false);
   const [sendedFileProgress, setSendedFileProgress] = useState<number>(0);
   const [typingUsers] = useState<UserData[]>([]);
-  const [replyingMessage, setReplyingMessage] = useState<MessageData | undefined>();
+  const [replyingMessage, setReplyingMessage] = useState<
+    MessageData | undefined
+  >();
   const [group, setGroup] = useState<GroupData | null>(null);
   const [participant, setParticipant] = useState<ParticipantsData | null>(null);
   const [participants, setParticipants] = useState<ParticipantsData[]>([]);
@@ -112,7 +120,7 @@ export const Chat: React.FC = () => {
   useScreenshotProtection(
     screenshotBlocked,
     loading || !group?.id || !participant?.id,
-    `chat-${id}`
+    `chat-${id}`,
   );
 
   const hideAlert = useCallback((): void => {
@@ -131,7 +139,7 @@ export const Chat: React.FC = () => {
   const scrollToBottom = useCallback((): void => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({
-        top: scrollContainerRef.current.scrollHeight,
+        top: 0,
         behavior: "smooth",
       });
     }
@@ -142,10 +150,15 @@ export const Chat: React.FC = () => {
     const { scrollTop, scrollHeight, clientHeight } =
       scrollContainerRef.current;
 
-    const isUp = scrollHeight - scrollTop - clientHeight > 300;
+    // Em containers com column-reverse, rolar para cima torna o scrollTop negativo
+    const absScrollTop = Math.abs(scrollTop);
+    const isUp = absScrollTop > 200;
     setShowScrollToBottom(isUp);
 
-    if (scrollTop === 0 && !fetching && !fetchedAll) {
+    // Detecta se o scroll chegou ao topo do histórico (máximo de rolagem para cima)
+    const isAtTop = absScrollTop + clientHeight >= scrollHeight - 50;
+
+    if (isAtTop && !fetching && !fetchedAll) {
       fetchOldMessages();
     }
   };
@@ -194,7 +207,7 @@ export const Chat: React.FC = () => {
       };
 
       setOldMessages((old: MessageData[]) =>
-        sortMessages(_.uniqBy([optimisticPollMessage, ...old], "id"))
+        sortMessages(_.uniqBy([optimisticPollMessage, ...old], "id")),
       );
 
       setTimeout(() => scrollToBottom(), 50);
@@ -222,7 +235,7 @@ export const Chat: React.FC = () => {
       sortMessages,
       scrollToBottom,
       setOldMessages,
-    ]
+    ],
   );
 
   const buildOptimisticMessage = useCallback(
@@ -240,7 +253,7 @@ export const Chat: React.FC = () => {
       mentions: data.mentions,
       created_at: new Date().toISOString(),
     }),
-    [group, participant, user]
+    [group, participant, user],
   );
 
   const handleSendVoice = useCallback(
@@ -263,7 +276,7 @@ export const Chat: React.FC = () => {
         });
 
         setOldMessages((old: MessageData[]) =>
-          sortMessages(_.uniqBy([optimisticAudio, ...old], "id"))
+          sortMessages(_.uniqBy([optimisticAudio, ...old], "id")),
         );
 
         setTimeout(() => scrollToBottom(), 50);
@@ -271,7 +284,7 @@ export const Chat: React.FC = () => {
         const res = await api.post(
           `/messages/SendAttachment/${id}?type=voice_message`,
           audioData,
-          { headers: { "Content-Type": "multipart/form-data" } }
+          { headers: { "Content-Type": "multipart/form-data" } },
         );
 
         setOldMessages((old: MessageData[]) =>
@@ -282,8 +295,8 @@ export const Chat: React.FC = () => {
                   voice_message: res.data?.voice_message ?? res.data,
                   sended: true,
                 }
-              : m
-          )
+              : m,
+          ),
         );
 
         handleSendVoiceMessage({
@@ -299,18 +312,27 @@ export const Chat: React.FC = () => {
         setAlertConfig({
           visible: true,
           title: "Erro",
-          content: "Não foi possível enviar a mensagem de voz. Tente novamente.",
+          content:
+            "Não foi possível enviar a mensagem de voz. Tente novamente.",
         });
       }
     },
-    [buildOptimisticMessage, replyingMessage, setOldMessages, sortMessages, scrollToBottom, id, handleSendVoiceMessage]
+    [
+      buildOptimisticMessage,
+      replyingMessage,
+      setOldMessages,
+      sortMessages,
+      scrollToBottom,
+      id,
+      handleSendVoiceMessage,
+    ],
   );
 
   const handleVoiceCallback = useCallback(
     (duration: number, audioFile: globalThis.File) => {
       handleSendVoice(duration, audioFile);
     },
-    [handleSendVoice]
+    [handleSendVoice],
   );
 
   const {
@@ -368,13 +390,13 @@ export const Chat: React.FC = () => {
         setLoading(false);
       }
     },
-    [id, setFetchedAll, setOldMessages, setPage, sortMessages]
+    [id, setFetchedAll, setOldMessages, setPage, sortMessages],
   );
 
   const handleMessageSubmit = async (
     message: string,
     selectedFiles: File[],
-    mentionIds: string[]
+    mentionIds: string[],
   ): Promise<void> => {
     if (id !== currentGroupId || !connected) {
       setAlertConfig({
@@ -404,7 +426,7 @@ export const Chat: React.FC = () => {
     });
 
     setOldMessages((old: MessageData[]) =>
-      sortMessages(_.uniqBy([optimisticMsg, ...old], "id"))
+      sortMessages(_.uniqBy([optimisticMsg, ...old], "id")),
     );
 
     setTimeout(() => scrollToBottom(), 50);
@@ -434,9 +456,9 @@ export const Chat: React.FC = () => {
             headers: { "Content-Type": "multipart/form-data" },
             onUploadProgress: (e) =>
               setSendedFileProgress(
-                Math.round((e.loaded * 100) / (e.total || 1))
+                Math.round((e.loaded * 100) / (e.total || 1)),
               ),
-          }
+          },
         );
         if (res.status === 200)
           handleSendMessage({
@@ -479,17 +501,14 @@ export const Chat: React.FC = () => {
       return setCanSendMessage(true);
     const pRoleIdx = ordernedRolesArray.indexOf(participant.role);
     const minRoleIdx = ordernedRolesArray.indexOf(
-      group.group_settings?.minimum_role_for_send_message
+      group.group_settings?.minimum_role_for_send_message,
     );
     setCanSendMessage(pRoleIdx >= minRoleIdx);
   }, [participant, group]);
 
-  // Se estiver carregando ou dados básicos não existirem, exibe o indicador de Loading
   if (loading || !group?.id || !participant?.id) {
     return <Loading />;
   }
-
-  const displayedMessages = [...oldMessages].reverse();
 
   return (
     <Container>
@@ -513,11 +532,15 @@ export const Chat: React.FC = () => {
         </IconButton>
 
         <GroupAvatar
-          src={group.group_avatar?.url || "/group-placeholder.png"}
+          src={
+            group.group_avatar
+              ? group.group_avatar.url
+              : "/avatar-placeholder.jpg"
+          }
           alt={group.name || "Avatar do Grupo"}
           onClick={() => navigate(`/group-info/${id}`)}
           onError={(e) => {
-            (e.target as HTMLImageElement).src = "/group-placeholder.png";
+            (e.target as HTMLImageElement).src = "/avatar-placeholder.jpg";
           }}
         />
 
@@ -542,11 +565,11 @@ export const Chat: React.FC = () => {
         </HeaderActions>
       </ChatHeader>
 
-      {/* ÁREA DE MENSAGENS E SCROLL */}
+      {/* ÁREA DE MENSAGENS E SCROLL (ALINHAMENTO EM COLUMN-REVERSE) */}
       <MessagesScrollContainer ref={scrollContainerRef} onScroll={handleScroll}>
-        {fetching && !fetchedAll && <LoadingIndicator />}
+        <Typing typingUsers={typingUsers} />
 
-        {displayedMessages.map((item, index) => (
+        {oldMessages.map((item, index) => (
           <MessageItemWrapper
             key={item.id || item.localReference}
             as={motion.div}
@@ -557,7 +580,7 @@ export const Chat: React.FC = () => {
             <Message
               message={item}
               participant={participant}
-              lastMessage={index > 0 ? displayedMessages[index - 1] : null}
+              lastMessage={index > 0 ? oldMessages[index - 1] : null}
               onReplyMessage={setReplyingMessage}
               group={group}
               disableReply={!canSendMessage}
@@ -567,7 +590,7 @@ export const Chat: React.FC = () => {
           </MessageItemWrapper>
         ))}
 
-        <Typing typingUsers={typingUsers} />
+        {fetching && !fetchedAll && <LoadingIndicator />}
       </MessagesScrollContainer>
 
       {/* BOTÃO FLUTUANTE PARA ROLAR ATÉ O FIM */}
