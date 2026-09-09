@@ -4,6 +4,7 @@ import Sidebar from "~/components/Sidebar";
 import {
   Container,
   GroupsContainer,
+  GroupsListContainer,
   GroupsTitle,
   MainContainer,
   QuickAccessGroup,
@@ -11,6 +12,7 @@ import {
   QuickAccessGroupsScroll,
   QuickAccessTitle,
 } from "./styles";
+import Group from "./components/Group";
 
 const Home: React.FC = () => {
   return (
@@ -42,6 +44,63 @@ const Home: React.FC = () => {
               </QuickAccessGroup>
             </QuickAccessGroupsScroll>
           </QuickAccessGroupsContainer>
+
+          <GroupsListContainer>
+            <Group
+              name={"Teste"}
+              image={"/avatar-placeholder.jpg"}
+              unreadMessages={99}
+              // onClick={() => handleGoChat(item.id)}
+            />
+            <Group
+              name={"Teste"}
+              image={"/avatar-placeholder.jpg"}
+              unreadMessages={99}
+              // onClick={() => handleGoChat(item.id)}
+            />
+            <Group
+              name={"Teste"}
+              image={"/avatar-placeholder.jpg"}
+              unreadMessages={99}
+              // onClick={() => handleGoChat(item.id)}
+            />
+            <Group
+              name={"Teste"}
+              image={"/avatar-placeholder.jpg"}
+              unreadMessages={99}
+              // onClick={() => handleGoChat(item.id)}
+            />
+            <Group
+              name={"Teste"}
+              image={"/avatar-placeholder.jpg"}
+              unreadMessages={99}
+              // onClick={() => handleGoChat(item.id)}
+            />
+            <Group
+              name={"Teste"}
+              image={"/avatar-placeholder.jpg"}
+              unreadMessages={99}
+              // onClick={() => handleGoChat(item.id)}
+            />
+            <Group
+              name={"Teste"}
+              image={"/avatar-placeholder.jpg"}
+              unreadMessages={99}
+              // onClick={() => handleGoChat(item.id)}
+            />
+            <Group
+              name={"Teste"}
+              image={"/avatar-placeholder.jpg"}
+              unreadMessages={99}
+              // onClick={() => handleGoChat(item.id)}
+            />
+            <Group
+              name={"Teste"}
+              image={"/avatar-placeholder.jpg"}
+              unreadMessages={99}
+              // onClick={() => handleGoChat(item.id)}
+            />
+          </GroupsListContainer>
         </GroupsContainer>
       </Container>
     </MainContainer>
