@@ -1,41 +1,21 @@
-import Feather from "@expo/vector-icons/Feather";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { AnimatePresence, MotiView } from "moti";
 import React, {
   forwardRef,
   useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
-  useRef,
   useState,
 } from "react";
-import SystemNavigationBar from "react-native-system-navigation-bar";
-import { useTheme } from "styled-components";
-import { millisToTime } from "@utils/format";
-import YouTubeVideoPlayer, {
-  IYouTubeControllers,
-} from "@components/YouTube/YouTubeVideoPlayer";
+import { X, ExternalLink } from "lucide-react";
 import {
-  Container,
-  YouTubeModal,
-  YouTubeModalHeader,
-  YouTubeModalHeaderButton,
-  YouTubePlayerControls,
-  YouTubePlayerControlsContainer,
-  YouTubePlayerInfoContainer,
-  YouTubePlayerInfos,
-  YouTubePlayerInfosContainer,
-  YouTubePlayerInfoText,
-  YouTubePlayerPlayAndPauseButton,
-  YouTubePlayerPlayAndPauseContainer,
-  YouTubePlayerSeekBar,
-  YouTubePlayerSeekBarContainer,
-  YouTubeVideoTitle,
+  Overlay,
+  ModalContainer,
+  Header,
+  Title,
+  HeaderButton,
+  PlayerContainer,
+  IFrame,
 } from "./styles";
-import { LinkUtils } from "@utils/link";
-import { DateUtils } from "@utils/date"
 
 interface IYouTubeIFrame {
   videoUrl: string;
@@ -46,32 +26,18 @@ export interface IYouTubeIFrameRef {
   openYouTubeIFrameModal: () => void;
 }
 
-const { convertToMillis } = new DateUtils()
-const TIME_FOR_HIDE_CONTROLS = convertToMillis(3, "SECONDS");
-
 const YouTubeIFrame: React.ForwardRefRenderFunction<
   IYouTubeIFrameRef,
   IYouTubeIFrame
 > = ({ videoUrl, title }, ref) => {
-  const [videoStatus, setVideoStatus] = useState<"PLAYING" | "PAUSED">(
-    "PLAYING"
-  );
-  const [videoDuration, setVideoDuration] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [hiddenControls, setHiddenControls] = useState(true);
-  const [hiddenControlsTimeout, setHiddenControlsTimeout] =
-    useState<number>();
   const [videoTitle, setVideoTitle] = useState(title);
-  const ytPlayerRef = useRef<IYouTubeControllers>(null);
-
-  const { colors } = useTheme();
-  const linkUtils = new LinkUtils()
 
   const videoId = useMemo(() => {
     if (!videoUrl) return null;
-    const regExp = /(?:[?&]v=|youtu\.be\/|\/(?:embed|v|shorts|live)\/)([a-zA-Z0-9_-]{11})/;
-    const match = videoUrl.match(regExp);    
+    const regExp =
+      /(?:[?&]v=|youtu\.be\/|\/(?:embed|v|shorts|live)\/)([a-zA-Z0-9_-]{11})/;
+    const match = videoUrl.match(regExp);
 
     if (match && match[1]) {
       return match[1];
@@ -83,188 +49,86 @@ const YouTubeIFrame: React.ForwardRefRenderFunction<
     const fetchTitle = async () => {
       if (videoId) {
         try {
-          const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+          const response = await fetch(
+            `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`
+          );
           const data = await response.json();
           if (data.title) {
             setVideoTitle(data.title);
           }
-        } catch (error) {}
+        } catch (error) {
+          console.error("Erro ao buscar título do vídeo:", error);
+        }
       }
     };
     fetchTitle();
   }, [videoId]);
 
-  const playPauseVideo = useCallback(() => {
-    if (videoStatus === "PLAYING") {
-      ytPlayerRef.current.pauseVideo();
-    } else {
-      ytPlayerRef.current.playVideo();
-    }
-
-    setVideoStatus((old) => (old === "PLAYING" ? "PAUSED" : "PLAYING"));
-  }, [ytPlayerRef, videoStatus]);
-
-  const seekTo = useCallback(
-    (time: number) => {
-      ytPlayerRef.current.seekTo(time);
-    },
-    [ytPlayerRef]
-  );
-
-  const onUpdateTime = useCallback((time: number) => {
-    setCurrentTime(time);
+  const openYouTubeIFrameModal = useCallback(() => {
+    setModalVisible(true);
   }, []);
 
-  const openYouTubeIFrameModal = useCallback(async () => {
-    setModalVisible(true);
-    await SystemNavigationBar.fullScreen(true);
-  }, [modalVisible]);
-
-  const handleCloseModal = useCallback(async () => {
-    await SystemNavigationBar.navigationShow();
-        await SystemNavigationBar.fullScreen(false);
-
+  const handleCloseModal = useCallback(() => {
     setModalVisible(false);
-  }, [modalVisible]);
-
-  const hideAndShowControls = useCallback(async () => {
-    if (!hiddenControls) {
-      setHiddenControls(true);
-      return;
-    }
-
-    setHiddenControls(false);
-
-    const timeout = setTimeout(async () => {
-      setHiddenControls(true);
-    }, TIME_FOR_HIDE_CONTROLS);
-    clearTimeout(hiddenControlsTimeout);
-    setHiddenControlsTimeout(timeout);
-  }, [hiddenControls, hiddenControlsTimeout]);
+  }, []);
 
   const openVideoOnYouTube = useCallback(() => {
-    linkUtils.openLink(videoUrl);
+    if (videoUrl) {
+      window.open(videoUrl, "_blank", "noopener,noreferrer");
+    }
   }, [videoUrl]);
 
+  // Permite fechar o modal ao pressionar 'Escape'
   useEffect(() => {
-    if (ytPlayerRef.current) {
-      setVideoDuration(ytPlayerRef.current.duration);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && modalVisible) {
+        handleCloseModal();
+      }
+    };
+
+    if (modalVisible) {
+      window.addEventListener("keydown", handleKeyDown);
     }
-  }, [ytPlayerRef.current]);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [modalVisible, handleCloseModal]);
 
   useImperativeHandle(ref, () => ({
     openYouTubeIFrameModal,
   }));
 
-  if (!videoId) return null;
+  if (!videoId || !modalVisible) return null;
 
   return (
-    <Container
-      visible={modalVisible}
-      onRequestClose={handleCloseModal}
-      animationType="slide"
-      statusBarTranslucent
-    >
-      <AnimatePresence>
-      {!hiddenControls && (
-        <YouTubeModalHeader
-          from={{
-            translateY: -50,
-            opacity: 0
-          }}
-          animate={{
-            translateY: 0,
-            opacity: 1
-          }}
-          exit={{
-            translateY: -50,
-            opacity: 0
-          }}
-          transition={{
-            duration: 350,
-            type: "timing",
-          }}
-        >
-            <YouTubeModalHeaderButton onPress={handleCloseModal}>
-              <Feather name="x" size={25} color="#fff" />
-            </YouTubeModalHeaderButton>
-            <YouTubeVideoTitle ellipsizeMode="middle" numberOfLines={1}>
-              {videoTitle}
-            </YouTubeVideoTitle>
-            <YouTubeModalHeaderButton onPress={openVideoOnYouTube}>
-              <FontAwesome name="youtube-play" size={25} color="#fff" />
-            </YouTubeModalHeaderButton>
-        </YouTubeModalHeader>
-      )}
-      </AnimatePresence>
-      <YouTubeModal>
-        <YouTubeVideoPlayer
-          ref={ytPlayerRef}
-          videoId={videoId}
-          onUpdateTime={onUpdateTime}
-          autoplay
-        />
-        <YouTubePlayerControlsContainer onPress={hideAndShowControls}>
-          <AnimatePresence>
-            {!hiddenControls && (
-              <MotiView
-                from={{ opacity: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{
-                  opacity: 0,
-                  scale: 1.1,
-                }}
-                transition={{
-                  type: "timing",
-                  duration: 200,
-                }}
-                style={{ flex: 1 }}
-              >
-                <YouTubePlayerControls>
-                  <YouTubePlayerPlayAndPauseContainer>
-                    <YouTubePlayerPlayAndPauseButton
-                      activeOpacity={0.7}
-                      onPress={playPauseVideo}
-                    >
-                      <MaterialCommunityIcons
-                        name={videoStatus === "PLAYING" ? "pause" : "play"}
-                        size={33}
-                        color="#fff"
-                      />
-                    </YouTubePlayerPlayAndPauseButton>
-                  </YouTubePlayerPlayAndPauseContainer>
-                  <YouTubePlayerInfosContainer>
-                    <YouTubePlayerInfos>
-                      <YouTubePlayerInfoContainer>
-                        <YouTubePlayerInfoText>
-                          {millisToTime(currentTime * 1000)}
-                        </YouTubePlayerInfoText>
-                      </YouTubePlayerInfoContainer>
-                      <YouTubePlayerInfoContainer>
-                        <YouTubePlayerInfoText>
-                          {millisToTime(videoDuration * 1000)}
-                        </YouTubePlayerInfoText>
-                      </YouTubePlayerInfoContainer>
-                    </YouTubePlayerInfos>
-                  </YouTubePlayerInfosContainer>
-                  <YouTubePlayerSeekBarContainer>
-                    <YouTubePlayerSeekBar
-                      value={currentTime}
-                      minimumValue={0}
-                      maximumValue={videoDuration}
-                      thumbTintColor={colors.secondary}
-                      minimumTrackTintColor={colors.secondary}
-                      maximumTrackTintColor={colors.dark_gray}
-                      onSlidingComplete={seekTo}
-                    />
-                  </YouTubePlayerSeekBarContainer>
-                </YouTubePlayerControls>
-              </MotiView>
-            )}
-          </AnimatePresence>
-        </YouTubePlayerControlsContainer>
-      </YouTubeModal>
-    </Container>
+    <Overlay onClick={handleCloseModal}>
+      <ModalContainer onClick={(e) => e.stopPropagation()}>
+        <Header>
+          <HeaderButton onClick={handleCloseModal} title="Fechar modal">
+            <X size={22} />
+          </HeaderButton>
+
+          <Title title={videoTitle}>{videoTitle}</Title>
+
+          <HeaderButton
+            onClick={openVideoOnYouTube}
+            title="Abrir no YouTube"
+          >
+            <ExternalLink size={20} />
+          </HeaderButton>
+        </Header>
+
+        <PlayerContainer>
+          <IFrame
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+            title={videoTitle}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </PlayerContainer>
+      </ModalContainer>
+    </Overlay>
   );
 };
 

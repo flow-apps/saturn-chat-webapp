@@ -1,20 +1,19 @@
 import React, { useState } from "react";
-import Feather from "@expo/vector-icons/Feather";
+import { CornerUpRight, FileText, Mic } from "lucide-react";
+import { MessageData } from "~/types/interfaces";
+import { secondsToTime } from "~/utils/format";
+
 import {
   Container,
+  ReplyingTitleContainer,
+  ReplyingTitle,
+  ReplyingMessageWrapper,
   ReplyingMessageAuthorWrapper,
   ReplyingMessageAuthorName,
-  ReplyingMessageWrapper,
-  ReplyingTitle,
-  ReplyingTitleContainer,
   ReplyingMessageContentContainer,
   ReplyingMessageContent,
   ReadMoreButton,
-  ReadMoreText,
 } from "./styles";
-import { MessageData } from "@type/interfaces";
-import { millisToTime } from "@utils/format";
-import { useTranslate } from "@hooks/useTranslate";
 
 interface ReplyingMessageProps {
   replying_message: MessageData;
@@ -22,8 +21,6 @@ interface ReplyingMessageProps {
 
 const ReplyingMessage = ({ replying_message }: ReplyingMessageProps) => {
   const [readAll, setReadAll] = useState(false);
-
-  const { t } = useTranslate("Components.Chat.ReplyingMessage");
 
   const handleReadMore = () => {
     setReadAll((old) => !old);
@@ -35,57 +32,66 @@ const ReplyingMessage = ({ replying_message }: ReplyingMessageProps) => {
     if (files?.length) {
       if (message) {
         return (
-          <ReplyingMessageContent numberOfLines={readAll ? undefined : 2}>
-            <Feather name="file" /> ({files.length}{" "}
-            {t("files", { count: files.length })}) {message}
-          </ReplyingMessageContent>
-        );
-      } else {
-        return (
-          <ReplyingMessageContent>
-            <Feather name="file" /> {files.length}{" "}
-            {t("files", { count: files.length })}
+          <ReplyingMessageContent $readAll={readAll}>
+            <FileText size={14} style={{ display: "inline", marginRight: 4 }} />
+            ({files.length} arquivo{files.length > 1 ? "s" : ""}) {message}
           </ReplyingMessageContent>
         );
       }
+      return (
+        <ReplyingMessageContent $readAll={readAll}>
+          <FileText size={14} style={{ display: "inline", marginRight: 4 }} />
+          {files.length} arquivo{files.length > 1 ? "s" : ""}
+        </ReplyingMessageContent>
+      );
     }
 
     if (voice_message) {
+      // Converte duração de milissegundos para segundos se necessário
+      const durationSeconds =
+        voice_message.duration > 1000
+          ? Math.round(voice_message.duration / 1000)
+          : voice_message.duration;
+
       return (
-        <ReplyingMessageContent>
-          <Feather name="mic" /> {t("voice_message")} (
-          {millisToTime(voice_message.duration)})
+        <ReplyingMessageContent $readAll={readAll}>
+          <Mic size={14} style={{ display: "inline", marginRight: 4 }} />
+          Mensagem de voz ({secondsToTime(durationSeconds)})
         </ReplyingMessageContent>
       );
     }
 
     return (
-      <ReplyingMessageContent numberOfLines={readAll ? undefined : 2}>
+      <ReplyingMessageContent $readAll={readAll}>
         {message}
       </ReplyingMessageContent>
     );
   };
 
+  const messageTextLength = replying_message.message?.length || 0;
+
   return (
     <Container>
       <ReplyingTitleContainer>
         <ReplyingTitle>
-          <Feather name="corner-up-right" /> {t("replying")}
+          <CornerUpRight size={12} style={{ display: "inline", marginRight: 4 }} />
+          Respondendo a
         </ReplyingTitle>
       </ReplyingTitleContainer>
+
       <ReplyingMessageWrapper>
         <ReplyingMessageAuthorWrapper>
           <ReplyingMessageAuthorName>
-            {replying_message.author.name}
+            {replying_message.author?.name}
           </ReplyingMessageAuthorName>
         </ReplyingMessageAuthorWrapper>
+
         <ReplyingMessageContentContainer>
           {getMessageContent()}
-          {replying_message.message.length > 80 && (
-            <ReadMoreButton onPress={handleReadMore}>
-              <ReadMoreText>
-                {readAll ? `[${t("read_less")}]` : `[${t("read_more")}]`}
-              </ReadMoreText>
+
+          {messageTextLength > 80 && (
+            <ReadMoreButton onClick={handleReadMore}>
+              {readAll ? "[ler menos]" : "[ler mais]"}
             </ReadMoreButton>
           )}
         </ReplyingMessageContentContainer>

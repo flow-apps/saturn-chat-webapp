@@ -1,11 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router";
-import {
-  Phone,
-  Users,
-  MoreVertical,
-  ChevronDown,
-} from "lucide-react";
+import { ArrowLeft, Phone, Users, MoreVertical, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import _ from "lodash";
 
@@ -41,6 +36,7 @@ import { File, ordernedRolesArray } from "./types";
 import {
   Container,
   ChatHeader,
+  GroupAvatar,
   HeaderInfo,
   HeaderActions,
   IconButton,
@@ -69,9 +65,8 @@ export const Chat: React.FC = () => {
   const { socket } = useWebsocket();
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState<boolean>(false);
 
-  // Sistema de rascunho persistido no localStorage do navegador
   const [draftMessage, setDraftMessage, isDraftFetched] =
     usePersistedState<string>(`@saturnchat:draft:${id}`, "");
 
@@ -86,30 +81,20 @@ export const Chat: React.FC = () => {
     setPage,
   } = useChatMessages(id);
 
-  const {
-    isRecording,
-    audioDuration,
-    recordAudio,
-    stopRecordAudioAndSubmit,
-    cancelRecordAudio,
-  } = useChatAudio((duration, audioFile) => handleSendVoice(duration, audioFile));
-
-  const [isPollModalVisible, setIsPollModalVisible] = useState(false);
+  const [isPollModalVisible, setIsPollModalVisible] = useState<boolean>(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [filesSizeUsed, setFilesSizeUsed] = useState(0);
-  const [sendingFile, setSendingFile] = useState(false);
-  const [sendedFileProgress, setSendedFileProgress] = useState(0);
-  const [typingUsers, setTypingUsers] = useState<UserData[]>([]);
-  const [replyingMessage, setReplyingMessage] = useState<MessageData>();
-  const [group, setGroup] = useState<GroupData>({} as GroupData);
-  const [participant, setParticipant] = useState<ParticipantsData>(
-    {} as ParticipantsData
-  );
+  const [, setFilesSizeUsed] = useState<number>(0);
+  const [sendingFile, setSendingFile] = useState<boolean>(false);
+  const [sendedFileProgress, setSendedFileProgress] = useState<number>(0);
+  const [typingUsers] = useState<UserData[]>([]);
+  const [replyingMessage, setReplyingMessage] = useState<MessageData | undefined>();
+  const [group, setGroup] = useState<GroupData | null>(null);
+  const [participant, setParticipant] = useState<ParticipantsData | null>(null);
   const [participants, setParticipants] = useState<ParticipantsData[]>([]);
 
-  const [loading, setLoading] = useState(true);
-  const [canSendMessage, setCanSendMessage] = useState(true);
-  const initialLoadDone = useRef(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [canSendMessage, setCanSendMessage] = useState<boolean>(true);
+  const initialLoadDone = useRef<boolean>(false);
 
   const [alertConfig, setAlertConfig] = useState<AlertConfigState>({
     visible: false,
@@ -117,50 +102,33 @@ export const Chat: React.FC = () => {
     content: "",
   });
 
-  const antiPrintSetting = group.group_settings?.anti_print;
+  const antiPrintSetting = group?.group_settings?.anti_print;
   const screenshotBlocked = isScreenshotBlocked({
     antiPrint: antiPrintSetting === true || antiPrintSetting === "true",
-    conversationType: group.type,
-    settingsLoading: loading || !group.id || !participant.id,
+    conversationType: group?.type,
+    settingsLoading: loading || !group?.id || !participant?.id,
   });
 
-  const { screenshotAlertVisible, dismissScreenshotAlert } =
-    useScreenshotProtection(
-      screenshotBlocked,
-      loading || !group.id || !participant.id,
-      `chat-${id}`
-    );
+  useScreenshotProtection(
+    screenshotBlocked,
+    loading || !group?.id || !participant?.id,
+    `chat-${id}`
+  );
 
-  const hideAlert = useCallback(() => {
+  const hideAlert = useCallback((): void => {
     setAlertConfig((prev) => ({ ...prev, visible: false }));
   }, []);
 
   const {
     handleJoinRoom,
-    handleSetReadMessage,
     handleSetTyping,
     handleSendMessage,
     handleSendVoiceMessage,
-    onSendedUserMessage,
-    onNewUserMessage,
-    onNewUserTyping,
-    onDeletedUserTyping,
-    onDeleteUserMessage,
     connected,
     currentGroupId,
   } = useChat();
 
-  const oldMessagesRef = useRef(oldMessages);
-  const typingUsersRef = useRef(typingUsers);
-  const replyingMessageRef = useRef(replyingMessage);
-  const userRef = useRef(user);
-
-  oldMessagesRef.current = oldMessages;
-  typingUsersRef.current = typingUsers;
-  replyingMessageRef.current = replyingMessage;
-  userRef.current = user;
-
-  const scrollToBottom = useCallback(() => {
+  const scrollToBottom = useCallback((): void => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({
         top: scrollContainerRef.current.scrollHeight,
@@ -169,15 +137,14 @@ export const Chat: React.FC = () => {
     }
   }, []);
 
-  const handleScroll = () => {
+  const handleScroll = (): void => {
     if (!scrollContainerRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-    
-    // Se a rolar para cima mais de 300px da base
+    const { scrollTop, scrollHeight, clientHeight } =
+      scrollContainerRef.current;
+
     const isUp = scrollHeight - scrollTop - clientHeight > 300;
     setShowScrollToBottom(isUp);
 
-    // Carrega mensagens antigas ao chegar no topo do scroll na web
     if (scrollTop === 0 && !fetching && !fetchedAll) {
       fetchOldMessages();
     }
@@ -188,8 +155,8 @@ export const Chat: React.FC = () => {
       question: string;
       options: string[];
       allows_multiple: boolean;
-    }) => {
-      if (id !== currentGroupId || !connected) {
+    }): void => {
+      if (id !== currentGroupId || !connected || !group || !participant) {
         setAlertConfig({
           visible: true,
           title: "Erro",
@@ -226,7 +193,7 @@ export const Chat: React.FC = () => {
         } as any,
       };
 
-      setOldMessages((old) =>
+      setOldMessages((old: MessageData[]) =>
         sortMessages(_.uniqBy([optimisticPollMessage, ...old], "id"))
       );
 
@@ -254,6 +221,7 @@ export const Chat: React.FC = () => {
       participant,
       sortMessages,
       scrollToBottom,
+      setOldMessages,
     ]
   );
 
@@ -261,8 +229,8 @@ export const Chat: React.FC = () => {
     (data: Partial<MessageData> & { localReference: string }): MessageData => ({
       id: data.id || data.localReference,
       author: user as UserData,
-      group,
-      participant,
+      group: group as GroupData,
+      participant: participant as ParticipantsData,
       message: data.message || "",
       files: data.files || [],
       voice_message: data.voice_message,
@@ -275,74 +243,92 @@ export const Chat: React.FC = () => {
     [group, participant, user]
   );
 
-  const handleSendVoice = async (duration: number, audioFile: File) => {
-    try {
-      const localReference = crypto.randomUUID();
-      const audioData = new FormData();
-      audioData.append("duration", String(duration));
-      audioData.append("attachment", audioFile);
+  const handleSendVoice = useCallback(
+    async (duration: number, audioFile: globalThis.File): Promise<void> => {
+      try {
+        const localReference = crypto.randomUUID();
+        const audioData = new FormData();
+        audioData.append("duration", String(duration));
+        audioData.append("attachment", audioFile);
 
-      const optimisticAudio = buildOptimisticMessage({
-        localReference,
-        voice_message: {
-          name: audioFile.name,
-          duration,
-          size: audioFile.size,
-          url: URL.createObjectURL(audioFile),
-        },
-        reply_to: replyingMessage,
-      });
+        const optimisticAudio = buildOptimisticMessage({
+          localReference,
+          voice_message: {
+            name: audioFile.name,
+            duration,
+            size: audioFile.size,
+            url: URL.createObjectURL(audioFile),
+          },
+          reply_to: replyingMessage,
+        });
 
-      setOldMessages((old) =>
-        sortMessages(_.uniqBy([optimisticAudio, ...old], "id"))
-      );
+        setOldMessages((old: MessageData[]) =>
+          sortMessages(_.uniqBy([optimisticAudio, ...old], "id"))
+        );
 
-      setTimeout(() => scrollToBottom(), 50);
+        setTimeout(() => scrollToBottom(), 50);
 
-      const res = await api.post(
-        `/messages/SendAttachment/${id}?type=voice_message`,
-        audioData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+        const res = await api.post(
+          `/messages/SendAttachment/${id}?type=voice_message`,
+          audioData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
 
-      setOldMessages((old) =>
-        old.map((m) =>
-          m.localReference === localReference
-            ? {
-                ...m,
-                voice_message: res.data?.voice_message ?? res.data,
-                sended: true,
-              }
-            : m
-        )
-      );
+        setOldMessages((old: MessageData[]) =>
+          old.map((m: MessageData) =>
+            m.localReference === localReference
+              ? {
+                  ...m,
+                  voice_message: res.data?.voice_message ?? res.data,
+                  sended: true,
+                }
+              : m
+          )
+        );
 
-      handleSendVoiceMessage({
-        audio: res.data,
-        reply_to_id: replyingMessage?.id ?? "",
-        message: "",
-        localReference,
-      });
+        handleSendVoiceMessage({
+          audio: res.data,
+          reply_to_id: replyingMessage?.id ?? "",
+          message: "",
+          localReference,
+        });
 
-      setReplyingMessage(undefined);
-    } catch (error) {
-      console.error("Send Voice Message Error:", error);
-      setAlertConfig({
-        visible: true,
-        title: "Erro",
-        content: "Não foi possível enviar a mensagem de voz. Tente novamente.",
-      });
-    }
-  };
+        setReplyingMessage(undefined);
+      } catch (error) {
+        console.error("Send Voice Message Error:", error);
+        setAlertConfig({
+          visible: true,
+          title: "Erro",
+          content: "Não foi possível enviar a mensagem de voz. Tente novamente.",
+        });
+      }
+    },
+    [buildOptimisticMessage, replyingMessage, setOldMessages, sortMessages, scrollToBottom, id, handleSendVoiceMessage]
+  );
 
-  const handleFileSelector = () => {
+  const handleVoiceCallback = useCallback(
+    (duration: number, audioFile: globalThis.File) => {
+      handleSendVoice(duration, audioFile);
+    },
+    [handleSendVoice]
+  );
+
+  const {
+    isRecording,
+    audioDuration,
+    recordAudio,
+    stopRecordAudioAndSubmit,
+    cancelRecordAudio,
+  } = useChatAudio(handleVoiceCallback);
+
+  const handleFileSelector = (): void => {
     const input = document.createElement("input");
     input.type = "file";
     input.multiple = true;
-    input.onchange = (e: Event) => {
+    input.onchange = (e: Event): void => {
       const target = e.target as HTMLInputElement;
       if (target.files) {
-        const selectedFiles = Array.from(target.files).map((file) => ({
+        const selectedFiles: File[] = Array.from(target.files).map((file) => ({
           file,
           type: file.type.startsWith("image/") ? "image" : "document",
         }));
@@ -353,7 +339,7 @@ export const Chat: React.FC = () => {
   };
 
   const fetchParticipantAndGroup = useCallback(
-    async (isSilent = false) => {
+    async (isSilent = false): Promise<void> => {
       if (!isSilent && !initialLoadDone.current) {
         setLoading(true);
       }
@@ -382,14 +368,14 @@ export const Chat: React.FC = () => {
         setLoading(false);
       }
     },
-    [id, sortMessages]
+    [id, setFetchedAll, setOldMessages, setPage, sortMessages]
   );
 
   const handleMessageSubmit = async (
     message: string,
     selectedFiles: File[],
     mentionIds: string[]
-  ) => {
+  ): Promise<void> => {
     if (id !== currentGroupId || !connected) {
       setAlertConfig({
         visible: true,
@@ -417,7 +403,7 @@ export const Chat: React.FC = () => {
       mentions: mentionIds,
     });
 
-    setOldMessages((old) =>
+    setOldMessages((old: MessageData[]) =>
       sortMessages(_.uniqBy([optimisticMsg, ...old], "id"))
     );
 
@@ -485,7 +471,7 @@ export const Chat: React.FC = () => {
     if (group?.id !== currentGroupId) {
       fetchParticipantAndGroup(false);
     }
-  }, [currentGroupId]);
+  }, [currentGroupId, fetchParticipantAndGroup, group?.id]);
 
   useEffect(() => {
     if (!participant || !group) return;
@@ -498,9 +484,11 @@ export const Chat: React.FC = () => {
     setCanSendMessage(pRoleIdx >= minRoleIdx);
   }, [participant, group]);
 
-  if (loading) return <Loading />;
+  // Se estiver carregando ou dados básicos não existirem, exibe o indicador de Loading
+  if (loading || !group?.id || !participant?.id) {
+    return <Loading />;
+  }
 
-  // Inverte a ordem das mensagens para exibição correta de baixo para cima
   const displayedMessages = [...oldMessages].reverse();
 
   return (
@@ -520,6 +508,19 @@ export const Chat: React.FC = () => {
 
       {/* HEADER DO CHAT */}
       <ChatHeader>
+        <IconButton title="Voltar" onClick={() => navigate(-1)}>
+          <ArrowLeft size={22} />
+        </IconButton>
+
+        <GroupAvatar
+          src={group.group_avatar?.url || "/group-placeholder.png"}
+          alt={group.name || "Avatar do Grupo"}
+          onClick={() => navigate(`/group-info/${id}`)}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/group-placeholder.png";
+          }}
+        />
+
         <HeaderInfo onClick={() => navigate(`/group-info/${id}`)}>
           <h3>{group.name}</h3>
           <span>{participants.length} membros</span>

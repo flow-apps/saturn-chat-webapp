@@ -1,46 +1,52 @@
-import React, { useMemo, memo } from "react";
-import { UserData } from "@type/interfaces";
+import React, { memo } from "react";
+import { Lottie } from "lottie-react";
+import typingAnimationData from "~/assets/typing.json";
+import { UserData } from "~/types/interfaces";
+
 import {
   Container,
   TypingContainer,
   TypingLeftSide,
   TypingRightSide,
-  TypingAnimation,
-  TypingUsersText,
   TypingUsersContainer,
+  TypingUsersText,
 } from "./styles";
-import { useTranslate } from "@hooks/useTranslate";
 
 type TypingProps = {
   typingUsers: UserData[];
 };
 
 const Typing = ({ typingUsers }: TypingProps) => {
-  const { t } = useTranslate("Components.Chat.Typing");
-
-  if (typingUsers.length <= 0) return null;
+  if (!typingUsers || typingUsers.length <= 0) return null;
 
   const names = [...new Set(typingUsers.map((user) => user.name))];
   const joinedNames = names.join(", ");
+
+  const renderTypingText = () => {
+    const isSingle = names.length === 1;
+    const isMany = names.length >= 5;
+
+    if (isMany) {
+      return "Muitas pessoas estão digitando...";
+    }
+
+    if (isSingle) {
+      return `${joinedNames} está digitando...`;
+    }
+
+    return `${joinedNames} estão digitando...`;
+  };
 
   return (
     <Container>
       <TypingContainer>
         <TypingLeftSide>
-          <TypingAnimation
-            source={require("@assets/typing.json")}
-            autoPlay
-            loop
-          />
+          <Lottie src={typingAnimationData as object} loop autoplay />
         </TypingLeftSide>
         <TypingRightSide>
           <TypingUsersContainer>
-            <TypingUsersText numberOfLines={1}>
-              {names.length < 5 ? joinedNames : t("many")}{" "}
-              {names.length <= 1 && names.length < 5
-                ? t("typing_user", { count: 1 })
-                : t("typing_user", { count: names.length })}
-              {t("typing")}
+            <TypingUsersText title={joinedNames}>
+              {renderTypingText()}
             </TypingUsersText>
           </TypingUsersContainer>
         </TypingRightSide>

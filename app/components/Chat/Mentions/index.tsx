@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { FlatList, TouchableOpacity } from "react-native";
-import api from "@services/api";
+import api from "~/services/api";
 import { MentionsProps, MentionUser } from "./types";
 import {
   Container,
+  UserList,
   UserContainer,
   Avatar,
   Nickname,
   NoResultsText,
 } from "./styles";
-import { useTheme } from "styled-components";
 
 const Mentions: React.FC<MentionsProps> = ({
   query,
@@ -17,49 +16,58 @@ const Mentions: React.FC<MentionsProps> = ({
   onUserSelect,
 }) => {
   const [users, setUsers] = useState<MentionUser[]>([]);
-  const { colors } = useTheme()
 
   useEffect(() => {
+    let isMounted = true;
+
     if (query) {
       api
         .get(`/users/search?q=${query}&group_id=${groupId}`)
         .then((response) => {
-          setUsers(response.data);
+          if (isMounted) {
+            setUsers(response.data);
+          }
         })
         .catch((error) => {
-          console.error(error);
+          console.error("Erro ao buscar usuários para menção:", error);
+          if (isMounted) setUsers([]);
         });
     } else {
       setUsers([]);
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [query, groupId]);
 
-  const renderItem = ({ item }: { item: MentionUser }) => (
-    <UserContainer onPress={() => onUserSelect(item)}>
-      <Avatar
-        uri={item.avatar ? item.avatar.url : ""}
-        placeholder={require("@assets/avatar-placeholder.jpg")}
-      />
-      <Nickname>{item.nickname}</Nickname>
-    </UserContainer>
-  );
+  if (!query) return null;
 
   return (
-    <FlatList
-      data={users}
-      ListEmptyComponent={() => (
-        <NoResultsText>Nenhum usuário encontrado</NoResultsText>
-      )}
-      renderItem={renderItem}
-      keyExtractor={(item) => item.id}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{
-        backgroundColor: colors.shape,
-        borderRadius: 8,
-        padding: 8,
-        marginTop: 10
-      }}
-    />
+    <Container>
+      <UserList>
+        {users.length > 0 ? (
+          users.map((user) => (
+            <UserContainer
+              key={user.id}
+              onClick={() => onUserSelect(user)}
+              type="button"
+            >
+              <Avatar
+                src={user.avatar?.url || "/avatar-placeholder.jpg"}
+                alt={user.nickname}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/avatar-placeholder.jpg";
+                }}
+              />
+              <Nickname>@{user.nickname}</Nickname>
+            </UserContainer>
+          ))
+        ) : (
+          <NoResultsText>Nenhum usuário encontrado</NoResultsText>
+        )}
+      </UserList>
+    </Container>
   );
 };
 

@@ -1,49 +1,82 @@
-import darken from "polished/lib/color/darken";
-import styled from 'styled-components/native';
-import fonts from '@styles/fonts';
+import { colord } from "colord";
+import styled from "styled-components";
 
-export const Container = styled.View`
-  border-left-width: 2px;
-  border-color: ${props => props.theme.colors.light_primary};
-  padding: 12px 5px 12px 20px;
-  width: 85%;
-  background-color: ${props => darken(0.03, props.theme.colors.shape)};
-  margin: 10px 0px 7px 0px;
-  border-top-right-radius: 5px;
-  border-bottom-right-radius: 5px;
-  elevation: 0.5;
+export const Container = styled.div`
+  border-left: 3px solid
+    ${({ theme }) => theme.colors?.light_primary || "#60a5fa"};
+  padding: 8px 12px;
+  width: 100%;
+  max-width: 90%;
+  background-color: ${({ theme }) =>
+    colord(theme.colors?.shape || "#18181b")
+      .darken(0.03)
+      .toRgbString()};
+  margin: 6px 0;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 `;
 
-export const ReplyingTitleContainer = styled.View``
+export const ReplyingTitleContainer = styled.div`
+  margin-bottom: 2px;
+`;
 
-export const ReplyingTitle = styled.Text`
-  font-family: ${fonts.text};
-  font-size: 10px;
-  color: ${props => props.theme.colors.dark_heading};
-`
+export const ReplyingTitle = styled.span`
+  font-size: 11px;
+  color: ${({ theme }) => theme.colors?.dark_heading || "#a1a1aa"};
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+`;
 
-export const ReplyingMessageWrapper = styled.View``
+export const ReplyingMessageWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
 
-export const ReplyingMessageAuthorWrapper = styled.View``
+export const ReplyingMessageAuthorWrapper = styled.div``;
 
-export const ReplyingMessageAuthorName = styled.Text`
-  font-size: 14px;
-  font-family: ${fonts.heading};
-  color: ${props => props.theme.colors.secondary};
-`
+export const ReplyingMessageAuthorName = styled.span`
+  font-size: 13px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors?.secondary || "#00b4d8"};
+`;
 
-export const ReplyingMessageContentContainer = styled.View`
-  margin-top: 10px;
-`
+export const ReplyingMessageContentContainer = styled.div`
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+`;
 
-export const ReplyingMessageContent = styled.Text`
-  font-family: ${fonts.text};
+export const ReplyingMessageContent = styled.p<{ $readAll?: boolean }>`
   font-size: 12px;
-  color: ${props => props.theme.colors.black};
-`
+  line-height: 1.4;
+  color: ${({ theme }) => theme.colors?.light_heading || "#ffffff"};
+  margin: 0;
+  word-break: break-word;
 
-export const ReadMoreButton = styled.TouchableOpacity``
+  ${(props) =>
+    !props.$readAll &&
+    `
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  `}
+`;
 
-export const ReadMoreText = styled.Text`
-  color: ${props => props.theme.colors.dark_gray}
-`
+export const ReadMoreButton = styled.button`
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: ${({ theme }) => theme.colors?.dark_heading || "#71717a"};
+  cursor: pointer;
+  padding: 0;
+  margin-top: 2px;
+  align-self: flex-start;
+
+  &:hover {
+    text-decoration: underline;
+    color: ${({ theme }) => theme.colors?.light_heading || "#ffffff"};
+  }
+`;

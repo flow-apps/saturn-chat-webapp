@@ -1,46 +1,36 @@
-import React, { useRef, useState, useEffect } from "react";
-import {
-  Keyboard,
-  Modal,
-  TextInput,
-  TouchableWithoutFeedback,
-} from "react-native";
-import { AnimatePresence } from "moti";
-import { ProgressBar } from "react-native-paper";
-import Feather from "@expo/vector-icons/Feather";
-import { useTheme } from "styled-components/native";
-import SimpleToast from "react-native-simple-toast";
-
-import { UserData, MessageData } from "@type/interfaces";
+import React, { useRef, useState, useEffect, useCallback } from "react";
+import { Plus, Paperclip, Send, Mic, Upload, BarChart2 } from "lucide-react";
+import { UserData, MessageData } from "~/types/interfaces";
 import { File } from "./types";
-import SelectedFiles from "@components/Chat/SelectedFiles";
-import CurrentReplyingMessage from "@components/Chat/CurrentReplyingMessage";
-import Mentions from "@components/Chat/Mentions";
-import { AudioRecordingBar } from "@components/Chat/AudioRecordingBar";
+
+import SelectedFiles from "~/components/Chat/SelectedFiles";
+import CurrentReplyingMessage from "~/components/Chat/CurrentReplyingMessage";
+import Mentions from "~/components/Chat/Mentions";
+import { AudioRecordingBar } from "~/components/Chat/AudioRecordingBar";
 
 import {
-  ActionIconContainer,
-  ActionItemButton,
-  ActionText,
-  AudioButton,
-  AudioContainer,
-  DragIndicator,
-  FileSendedProgressContainer,
-  FileSendedText,
   FormContainer,
   InputContainer,
   MessageInput,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay,
+  OptionsContainer,
+  OptionsButton,
+  SendButton,
+  AudioContainer,
+  AudioButton,
+  PlusButton,
+  FileSendedProgressContainer,
+  FileSendedText,
+  ProgressBarContainer,
+  ProgressBarFill,
   NoSendMessageContainer,
   NoSendMessageText,
-  OptionsButton,
-  OptionsContainer,
-  PlusButton,
-  SendButton,
+  ActionsPopoverOverlay,
+  ActionsPopover,
+  ActionItemButton,
+  ActionIconContainer,
+  ActionText,
+  HiddenFileInput,
 } from "./styles";
-import { useTranslate } from "@hooks/useTranslate";
 
 interface ChatInputProps {
   groupId: string;
@@ -60,10 +50,10 @@ interface ChatInputProps {
   onRemoveFile: (index: number) => void;
   onRemoveReplying: () => void;
   onTyping: () => void;
-  onTypingTimeout: () => void;
+  onTypingTimeout?: () => void;
   files: File[];
-  insetsBottom: number;
-  isKeyboardVisible: boolean;
+  insetsBottom?: number;
+  isKeyboardVisible?: boolean;
   initialValue?: string;
   onChangeText?: (text: string) => void;
 }
@@ -87,41 +77,43 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onRemoveReplying,
   onTyping,
   files,
-  insetsBottom,
-  isKeyboardVisible,
   initialValue = "",
   onChangeText,
 }) => {
-  const { colors } = useTheme();
-  const messageInputRef = useRef<{
-    value?: string;
-    clear: () => void;
-    focus: () => void;
-    setNativeProps: (p: any) => void;
-  }>(null);
-
-  const [isTypingMessage, setIsTypingMessage] = useState(false);
+  const [textValue, setTextValue] = useState(initialValue);
+  const [isTypingMessage, setIsTypingMessage] = useState(
+    initialValue.length > 0,
+  );
   const [mentionQuery, setMentionQuery] = useState("");
   const [isMentioning, setIsMentioning] = useState(false);
   const [mentions, setMentions] = useState<UserData[]>([]);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [mentionPosition, setMentionPosition] = useState({ start: 0, end: 0 });
   const [isActionsModalVisible, setIsActionsModalVisible] = useState(false);
-  const { t } = useTranslate("Chat");
 
-  // Sincroniza o rascunho inicial vindo do hook persistido
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sincroniza rascunho inicial
   useEffect(() => {
-    if (initialValue !== undefined && messageInputRef.current) {
-      messageInputRef.current.setNativeProps({ text: initialValue });
-      messageInputRef.current.value = initialValue;
+    if (initialValue !== undefined) {
+      setTextValue(initialValue);
       setIsTypingMessage(initialValue.length > 0);
     }
   }, [initialValue]);
 
-  const handleSetText = (text: string) => {
-    if (text.length >= maxMessageLength) {
-      return SimpleToast.show(t("limit_char"), SimpleToast.SHORT);
+  // Ajusta altura do textarea dinamicamente conforme digita
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
+  }, [textValue]);
+
+  const handleSetText = (text: string) => {
+    if (text.length > maxMessageLength) return;
+
+    setTextValue(text);
     setIsTypingMessage(text.length > 0);
 
     const match = /@(\w+)/g.exec(text);
@@ -141,8 +133,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
 
     setMentions((prev) => prev.filter((m) => text.includes(`@${m.nickname}`)));
-    if (messageInputRef.current) messageInputRef.current.value = text;
-    
+
     if (onChangeText) {
       onChangeText(text);
     }
@@ -150,67 +141,69 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const handleUserSelect = (selectedUser: UserData) => {
-    const text = messageInputRef.current?.value || "";
-    const newText = `${text.substring(0, mentionPosition.start)}@${selectedUser.nickname} ${text.substring(mentionPosition.end)}`;
+    const newText = `${textValue.substring(0, mentionPosition.start)}@${selectedUser.nickname} ${textValue.substring(mentionPosition.end)}`;
 
-    if (messageInputRef.current) {
-      messageInputRef.current.setNativeProps({ text: newText });
-      messageInputRef.current.value = newText;
-    }
-
+    setTextValue(newText);
     setMentions((prev) => [...prev, selectedUser]);
     setIsMentioning(false);
     setIsTypingMessage(true);
-    
+
     if (onChangeText) {
       onChangeText(newText);
     }
     onTyping();
-    messageInputRef.current?.focus();
+
+    textareaRef.current?.focus();
   };
 
-  const handleSubmit = () => {
-    const text = messageInputRef.current?.value || "";
-    if (files.length === 0 && !text) return;
+  const handleSubmit = useCallback(() => {
+    if (files.length === 0 && !textValue.trim()) return;
 
-    if (messageInputRef.current) {
-      messageInputRef.current.clear();
-      messageInputRef.current.value = "";
-    }
-
+    const messageToSend = textValue;
+    setTextValue("");
     setIsTypingMessage(false);
-    
+
     if (onChangeText) {
       onChangeText("");
     }
 
     onSendMessage(
-      text,
+      messageToSend,
       files,
       mentions.map((m) => m.id),
     );
     setMentions([]);
+
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+  }, [files, textValue, mentions, onSendMessage, onChangeText]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  const handleNativeFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      onFileSelect();
+    }
   };
 
   if (!canSendMessage) {
     return (
       <NoSendMessageContainer>
-        <NoSendMessageText>{t("no_send_message")}</NoSendMessageText>
+        <NoSendMessageText>
+          Apenas administradores podem enviar mensagens neste grupo.
+        </NoSendMessageText>
       </NoSendMessageContainer>
     );
   }
 
   return (
-    <FormContainer
-      style={{
-        paddingHorizontal: 12,
-        paddingBottom: isKeyboardVisible
-          ? 8
-          : insetsBottom > 0
-            ? insetsBottom - 40
-            : 12,
-      }}
-    >
+    <FormContainer>
       {isMentioning && (
         <Mentions
           query={mentionQuery}
@@ -226,61 +219,40 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       {sendingFile && (
         <FileSendedProgressContainer>
           <FileSendedText>
-            <Feather name="upload" size={16} /> {sendedFileProgress}% Enviado
+            <Upload size={16} /> {sendedFileProgress}% Enviado
           </FileSendedText>
-          <ProgressBar
-            progress={sendedFileProgress / 100}
-            color={colors.primary}
-            style={{ minWidth: "100%", height: 10, borderRadius: 10 }}
-          />
+          <ProgressBarContainer>
+            <ProgressBarFill $progress={sendedFileProgress} />
+          </ProgressBarContainer>
         </FileSendedProgressContainer>
       )}
 
-      <AnimatePresence>
-        {replyingMessage && !isRecording && (
-          <CurrentReplyingMessage
-            message={replyingMessage}
-            onRemoveReplying={onRemoveReplying}
-          />
-        )}
-      </AnimatePresence>
+      {replyingMessage && !isRecording && (
+        <CurrentReplyingMessage
+          message={replyingMessage}
+          onRemoveReplying={onRemoveReplying}
+        />
+      )}
 
-      <Modal
-        visible={isActionsModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsActionsModalVisible(false)}
-      >
-        <TouchableWithoutFeedback
-          onPress={() => setIsActionsModalVisible(false)}
-        >
-          <ModalOverlay>
-            <TouchableWithoutFeedback>
-              <ModalContent>
-                <ModalHeader>
-                  <DragIndicator />
-                </ModalHeader>
-
-                <ActionItemButton
-                  onPress={() => {
-                    setIsActionsModalVisible(false);
-                    onOpenPollModal();
-                  }}
-                >
-                  <ActionIconContainer bgColor={colors.primary + "20"}>
-                    <Feather
-                      name="bar-chart-2"
-                      size={22}
-                      color={colors.primary}
-                    />
-                  </ActionIconContainer>
-                  <ActionText>Criar Enquete</ActionText>
-                </ActionItemButton>
-              </ModalContent>
-            </TouchableWithoutFeedback>
-          </ModalOverlay>
-        </TouchableWithoutFeedback>
-      </Modal>
+      {/* Popover/Modal de Opções Extras */}
+      {isActionsModalVisible && (
+        <ActionsPopoverOverlay onClick={() => setIsActionsModalVisible(false)}>
+          <ActionsPopover onClick={(e) => e.stopPropagation()}>
+            <ActionItemButton
+              type="button"
+              onClick={() => {
+                setIsActionsModalVisible(false);
+                onOpenPollModal();
+              }}
+            >
+              <ActionIconContainer>
+                <BarChart2 size={22} />
+              </ActionIconContainer>
+              <ActionText>Criar Enquete</ActionText>
+            </ActionItemButton>
+          </ActionsPopover>
+        </ActionsPopoverOverlay>
+      )}
 
       {isRecording ? (
         <AudioRecordingBar
@@ -291,48 +263,60 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       ) : (
         <InputContainer>
           <PlusButton
-            onPress={() => {
-              Keyboard.dismiss();
-              setIsActionsModalVisible(true);
-            }}
+            type="button"
+            onClick={() => setIsActionsModalVisible((prev) => !prev)}
+            title="Mais opções"
           >
-            <Feather name="plus" size={26} color={colors.primary} />
+            <Plus size={24} />
           </PlusButton>
 
           <MessageInput
-            //@ts-ignore
-            ref={messageInputRef}
-            as={TextInput}
-            cursorColor={colors.secondary}
-            placeholderTextColor={colors.dark_heading}
-            onChangeText={handleSetText}
-            onSelectionChange={({ nativeEvent: { selection } }) =>
-              setCursorPosition(selection.start)
+            ref={textareaRef}
+            value={textValue}
+            onChange={(e) => handleSetText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onSelect={(e) =>
+              setCursorPosition(
+                (e.target as HTMLTextAreaElement).selectionStart,
+              )
             }
             maxLength={maxMessageLength}
-            placeholder={t("type_message")}
+            placeholder="Digite sua mensagem..."
+            rows={1}
           />
+
+          <HiddenFileInput
+            type="file"
+            ref={fileInputRef}
+            onChange={handleNativeFileSelect}
+            multiple
+          />
+
           <OptionsContainer>
-            <OptionsButton onPress={onFileSelect}>
-              <Feather name="file" size={24} color={colors.primary} />
+            <OptionsButton
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              title="Anexar arquivo"
+            >
+              <Paperclip size={22} />
             </OptionsButton>
+
             {isTypingMessage || files.length > 0 ? (
-              <SendButton onPress={handleSubmit}>
-                <Feather
-                  name="send"
-                  size={26}
-                  color={colors.primary}
-                  style={{ transform: [{ rotate: "45deg" }] }}
-                />
+              <SendButton
+                type="button"
+                onClick={handleSubmit}
+                title="Enviar mensagem"
+              >
+                <Send size={22} />
               </SendButton>
             ) : (
               <AudioContainer>
                 <AudioButton
-                  onPressIn={() =>
-                    onRecordAudioStart(!!messageInputRef.current?.value)
-                  }
+                  type="button"
+                  onClick={() => onRecordAudioStart(!!textValue)}
+                  title="Gravar áudio"
                 >
-                  <Feather name="mic" size={26} color={colors.secondary} />
+                  <Mic size={22} />
                 </AudioButton>
               </AudioContainer>
             )}

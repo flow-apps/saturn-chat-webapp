@@ -1,23 +1,21 @@
 import React, { memo } from "react";
+import { Mic, FileMinus, CornerUpRight, XCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { MessageData } from "~/types/interfaces";
+import { secondsToTime } from "~/utils/format";
+
 import {
-  ReplyingMessage,
-  ReplyingMessageAuthorName,
-  ReplyingMessageAuthorNameWrapper,
   ReplyingMessageContainer,
   ReplyingMessageContentContainer,
-  ReplyingMessageRemoveButton,
-  ReplyingMessageRemoveContainer,
-  ReplyingMessageTitle,
   ReplyingMessageTitleWrapper,
+  ReplyingMessageTitle,
+  ReplyingMessageAuthorNameWrapper,
+  ReplyingMessageAuthorName,
   ReplyingMessageWrapper,
+  ReplyingMessageText,
+  ReplyingMessageRemoveContainer,
+  ReplyingMessageRemoveButton,
 } from "./styles";
-
-import Feather from "@expo/vector-icons/Feather";
-import { useTheme } from "styled-components";
-import { MessageData } from "@type/interfaces";
-import { millisToTime } from "@utils/format";
-import { MotiView } from "moti";
-import { useTranslate } from "@hooks/useTranslate";
 
 interface CurrentReplyingMessageProps {
   message: MessageData;
@@ -28,73 +26,75 @@ const CurrentReplyingMessage = ({
   message,
   onRemoveReplying,
 }: CurrentReplyingMessageProps) => {
-  const { colors } = useTheme();
-  const { t } = useTranslate("Components.Chat.CurrentReplyingMessage");
-
   const renderMessageContent = () => {
     if (message.voice_message) {
+      const durationSeconds =
+        message.voice_message.duration > 1000
+          ? Math.round(message.voice_message.duration / 1000)
+          : message.voice_message.duration;
+
       return (
-        <ReplyingMessage textBreakStrategy="balanced" numberOfLines={2}>
-          <Feather name="mic" size={13} /> {t("voice_message")} (
-          {millisToTime(message.voice_message.duration)})
-        </ReplyingMessage>
+        <ReplyingMessageText>
+          <Mic size={13} style={{ display: "inline", marginRight: 4 }} /> Mensagem de voz (
+          {secondsToTime(durationSeconds)})
+        </ReplyingMessageText>
       );
     }
 
     if (message.files?.length) {
       return (
-        <ReplyingMessage textBreakStrategy="balanced" numberOfLines={2}>
-          (<Feather name="file-minus" size={13} /> {message.files.length}{" "}
-          {t("file_amount", { count: message.files.length })}){" "}
+        <ReplyingMessageText>
+          (<FileMinus size={13} style={{ display: "inline", marginRight: 4 }} />{" "}
+          {message.files.length} arquivo{message.files.length > 1 ? "s" : ""}){" "}
           {message.message ? message.message : ""}
-        </ReplyingMessage>
+        </ReplyingMessageText>
       );
     }
 
     if (message.message) {
-      return (
-        <ReplyingMessage textBreakStrategy="balanced" numberOfLines={2}>
-          {message.message}
-        </ReplyingMessage>
-      );
+      return <ReplyingMessageText>{message.message}</ReplyingMessageText>;
     }
+
+    return null;
   };
 
   return (
-    <>
-      <MotiView
-        from={{ opacity: 0, height: 0 }}
-        animate={{ opacity: 1, height: 120 }}
-        exit={{ opacity: 0, height: 0 }}
-        transition={{
-          type: "timing",
-          duration: 350,
-        }}
-      >
-        <ReplyingMessageContainer>
-          <ReplyingMessageContentContainer>
-            <ReplyingMessageTitleWrapper>
-              <ReplyingMessageTitle>
-                <Feather name="corner-up-right" /> {t("replying_text")}
-              </ReplyingMessageTitle>
-            </ReplyingMessageTitleWrapper>
-            <ReplyingMessageAuthorNameWrapper>
-              <ReplyingMessageAuthorName>
-                {message.author.name}
-              </ReplyingMessageAuthorName>
-            </ReplyingMessageAuthorNameWrapper>
-            <ReplyingMessageWrapper>
-              {renderMessageContent()}
-            </ReplyingMessageWrapper>
-          </ReplyingMessageContentContainer>
-          <ReplyingMessageRemoveContainer>
-            <ReplyingMessageRemoveButton onPress={onRemoveReplying}>
-              <Feather name="x-circle" size={25} color={colors.red} />
-            </ReplyingMessageRemoveButton>
-          </ReplyingMessageRemoveContainer>
-        </ReplyingMessageContainer>
-      </MotiView>
-    </>
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+      style={{ width: "100%", overflow: "hidden" }}
+    >
+      <ReplyingMessageContainer>
+        <ReplyingMessageContentContainer>
+          <ReplyingMessageTitleWrapper>
+            <ReplyingMessageTitle>
+              <CornerUpRight size={12} style={{ display: "inline", marginRight: 4 }} />{" "}
+              Respondendo à mensagem
+            </ReplyingMessageTitle>
+          </ReplyingMessageTitleWrapper>
+
+          <ReplyingMessageAuthorNameWrapper>
+            <ReplyingMessageAuthorName>
+              {message.author?.name}
+            </ReplyingMessageAuthorName>
+          </ReplyingMessageAuthorNameWrapper>
+
+          <ReplyingMessageWrapper>{renderMessageContent()}</ReplyingMessageWrapper>
+        </ReplyingMessageContentContainer>
+
+        <ReplyingMessageRemoveContainer>
+          <ReplyingMessageRemoveButton
+            onClick={onRemoveReplying}
+            type="button"
+            title="Cancelar resposta"
+          >
+            <XCircle size={22} />
+          </ReplyingMessageRemoveButton>
+        </ReplyingMessageRemoveContainer>
+      </ReplyingMessageContainer>
+    </motion.div>
   );
 };
 

@@ -1,4 +1,4 @@
-import { UserData } from "@type/interfaces";
+import { UserData } from "~/types/interfaces";
 
 export interface MentionsProps {
   query: string;
@@ -6,5 +6,4 @@ export interface MentionsProps {
   onUserSelect: (user: UserData) => void;
 }
 
-export interface MentionUser extends UserData {
-}
+export interface MentionUser extends UserData {}

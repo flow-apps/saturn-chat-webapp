@@ -1,158 +1,228 @@
-import fonts from "@styles/fonts";
-import styled from "styled-components/native";
+import styled from "styled-components";
 
-export const FileSendedProgressContainer = styled.View`
-  background-color: ${(props) => props.theme.colors.shape};
-  padding: 10px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-`;
-
-export const FileSendedText = styled.Text`
-  font-family: ${fonts.heading};
-  font-size: 16px;
-  color: ${(props) => props.theme.colors.secondary};
-  margin-bottom: 10px;
-`;
-
-export const FormContainer = styled.View`
-  margin-bottom: 10px;
-`;
-
-export const InputContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-
-  background: ${(props) => props.theme.colors.shape};
-  border: 1px solid ${(props) => props.theme.colors.dark_gray};
-  padding: 15px;
-  border-radius: 50px;
-  margin-top: 10px;
-`;
-
-export const OptionsContainer = styled.View`
-  flex-direction: row;
-`;
-
-export const OptionsButton = styled.TouchableOpacity`
-  margin-right: 10px;
-`;
-
-export const SendButton = styled.TouchableOpacity``;
-
-export const MessageInput = styled.TextInput.attrs({
-  multiline: true,
-})`
-  flex: 1;
-  font-family: ${fonts.text};
-  margin: 0px 10px;
-  max-height: 120px;
-  color: ${(props) => props.theme.colors.black};
-`;
-
-export const AudioContainer = styled.View``;
-
-export const AudioButton = styled.Pressable``;
-
-export const AdBannerWrapper = styled.View`
-  padding: 10px;
-`;
-
-export const NoSendMessageContainer = styled.View`
-  background-color: ${(props) => props.theme.colors.shape};
+export const FormContainer = styled.div`
+  position: relative;
   width: 100%;
-  padding: 20px 10px;
-  border-top-right-radius: 15px;
-  border-top-left-radius: 15px;
+  padding: 12px 16px;
+  background-color: ${({ theme }) => theme.colors?.background || "#0f0f12"};
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 `;
 
-export const NoSendMessageText = styled.Text`
-  text-align: center;
-  font-family: ${fonts.quote};
-  color: ${(props) => props.theme.colors.black};
-`;
-
-export const NoSendMessageTextFeature = styled.Text`
-  color: ${(props) => props.theme.colors.secondary};
-`;
-
-export const AudioRecordingContainer = styled.View`
-  flex-direction: row;
+export const InputContainer = styled.div`
+  display: flex;
   align-items: center;
-  justify-content: space-between;
-  background-color: ${({ theme }) => theme.colors.shape || "#1E1E1E"};
+  background-color: ${({ theme }) => theme.colors?.shape || "#18181b"};
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 12px;
   border-radius: 24px;
-  padding: 8px 16px;
-  min-height: 48px;
+  gap: 8px;
+  transition: border-color 0.2s ease;
+
+  &:focus-within {
+    border-color: ${({ theme }) => theme.colors?.primary || "#3b82f6"};
+  }
 `;
 
-export const CancelAudioButton = styled.TouchableOpacity`
-  padding: 8px;
-`;
-
-export const SendAudioButton = styled.TouchableOpacity`
-  background-color: ${({ theme }) => theme.colors.primary};
-  border-radius: 20px;
-  padding: 8px;
+export const PlusButton = styled.button`
+  background: transparent;
+  border: none;
+  color: ${({ theme }) => theme.colors?.primary || "#3b82f6"};
+  display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.8;
+  }
 `;
 
-export const PlusButton = styled.TouchableOpacity`
-  padding-horizontal: 8px;
-  justify-content: center;
-  align-items: center;
-`;
-
-export const ModalOverlay = styled.View`
+export const MessageInput = styled.textarea`
   flex: 1;
-  background-color: rgba(0, 0, 0, 0.5);
-  justify-content: flex-end;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: ${({ theme }) => theme.colors?.light_heading || "#ffffff"};
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  max-height: 120px;
+  line-height: 1.4;
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors?.dark_heading || "#71717a"};
+  }
 `;
 
-export const ModalContent = styled.View`
-  background-color: ${({ theme }) => theme.colors.background || "#1F2937"};
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
-  padding: 20px;
-  gap: 16px;
+export const HiddenFileInput = styled.input`
+  display: none;
 `;
 
-export const ModalHeader = styled.View`
-  flex-direction: row;
-  justify-content: center;
+export const OptionsContainer = styled.div`
+  display: flex;
   align-items: center;
-  margin-bottom: 8px;
+  gap: 8px;
 `;
 
-export const DragIndicator = styled.View`
-  width: 40px;
-  height: 4px;
-  background-color: ${({ theme }) => theme.colors.dark_heading || "#4B5563"};
-  border-radius: 2px;
+export const OptionsButton = styled.button`
+  background: transparent;
+  border: none;
+  color: ${({ theme }) => theme.colors?.primary || "#3b82f6"};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.8;
+  }
 `;
 
-export const ActionItemButton = styled.TouchableOpacity`
-  flex-direction: row;
+export const SendButton = styled.button`
+  background: ${({ theme }) => theme.colors?.primary || "#3b82f6"};
+  border: none;
+  color: #ffffff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+
+  &:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+`;
+
+export const AudioContainer = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+export const AudioButton = styled.button`
+  background: transparent;
+  border: none;
+  color: ${({ theme }) => theme.colors?.secondary || "#00b4d8"};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: transform 0.15s ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+`;
+
+export const FileSendedProgressContainer = styled.div`
+  background-color: ${({ theme }) => theme.colors?.shape || "#18181b"};
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+`;
+
+export const FileSendedText = styled.span`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors?.secondary || "#00b4d8"};
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+export const ProgressBarContainer = styled.div`
+  width: 100%;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+`;
+
+export const ProgressBarFill = styled.div<{ $progress: number }>`
+  height: 100%;
+  width: ${(props) => props.$progress}%;
+  background-color: ${({ theme }) => theme.colors?.primary || "#3b82f6"};
+  transition: width 0.2s ease;
+`;
+
+export const NoSendMessageContainer = styled.div`
+  background-color: ${({ theme }) => theme.colors?.shape || "#18181b"};
+  width: 100%;
+  padding: 16px;
+  border-top-right-radius: 12px;
+  border-top-left-radius: 12px;
+  text-align: center;
+`;
+
+export const NoSendMessageText = styled.span`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors?.dark_heading || "#a1a1aa"};
+`;
+
+export const ActionsPopoverOverlay = styled.div`
+  position: absolute;
+  bottom: 60px;
+  left: 16px;
+  z-index: 100;
+`;
+
+export const ActionsPopover = styled.div`
+  background-color: ${({ theme }) => theme.colors?.shape || "#18181b"};
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+`;
+
+export const ActionItemButton = styled.button`
+  background: transparent;
+  border: none;
+  display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 0;
+  padding: 10px 14px;
+  width: 100%;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
 `;
 
-export const ActionIconContainer = styled.View<{ bgColor?: string }>`
-  width: 44px;
-  height: 44px;
-  border-radius: 22px;
-  background-color: ${({ bgColor }) => bgColor || "#ffffff1a"};
+export const ActionIconContainer = styled.div`
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: ${({ theme }) =>
+    (theme.colors?.primary || "#3b82f6") + "20"};
+  color: ${({ theme }) => theme.colors?.primary || "#3b82f6"};
+  display: flex;
   align-items: center;
   justify-content: center;
 `;
 
-export const ActionText = styled.Text`
-  font-size: 16px;
-  font-family: ${fonts["text-bold"]};
+export const ActionText = styled.span`
+  font-size: 14px;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.black || "#FFF"};
+  color: ${({ theme }) => theme.colors?.light_heading || "#ffffff"};
 `;

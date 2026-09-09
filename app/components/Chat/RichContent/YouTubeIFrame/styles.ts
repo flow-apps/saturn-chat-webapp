@@ -1,94 +1,92 @@
-import styled from "styled-components/native";
-import Slider from "@react-native-community/slider";
-import fonts from "@styles/fonts";
-import { MotiView } from "moti";
-import { getStatusBarHeight } from "react-native-iphone-x-helper";
+import styled from "styled-components";
 
-export const Container = styled.Modal`
-  position: relative;
-  flex: 1;
-`;
-
-export const YouTubeModal = styled.View`
-  background-color: #000000;
-  flex: 1;
-`;
-
-export const YouTubeModalHeader = styled(MotiView)`
-  position: absolute;
-  width: 100%;
-  padding: 12px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  background-color: transparent;
-  z-index: 10;
-  top: ${getStatusBarHeight() - 20}px;
-`;
-
-export const YouTubeModalHeaderButton = styled.TouchableOpacity`
-  margin: 0 5px;
-`;
-
-export const YouTubeVideoTitle = styled.Text`
-  color: #fff;
-  font-family: ${fonts["text-bold"]};
-  font-size: 12px;
-  flex: 1;
-  margin: 0px 5px;
-  margin-top: 5px;
-`;
-
-export const YouTubePlayerControlsContainer = styled.Pressable`
-  position: relative;
-  flex: 1;
-  width: 100%;
-  height: 100%;
+export const Overlay = styled.div`
+  position: fixed;
   top: 0;
-  position: absolute;
-  z-index: 5;
-  padding: 20px 0;
-`;
-
-export const YouTubePlayerControls = styled.View`
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  background-color: #00000055;
-  margin-bottom: 5px;
-`;
-
-export const YouTubePlayerPlayAndPauseContainer = styled.View`
-  flex: 1;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-in-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 `;
 
-export const YouTubePlayerPlayAndPauseButton = styled.TouchableOpacity`
-  background-color: #00000088;
-  padding: 18px;
-  border-radius: 50px;
+export const ModalContainer = styled.div`
+  width: 90%;
+  max-width: 900px;
+  background-color: #0f0f12;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 `;
 
-export const YouTubePlayerInfosContainer = styled.View`
-  padding: 0 15px;
-`;
-
-export const YouTubePlayerInfos = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
+export const Header = styled.div`
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: #18181b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 12px;
 `;
 
-export const YouTubePlayerInfoContainer = styled.View``;
+export const HeaderButton = styled.button`
+  background: transparent;
+  border: none;
+  color: #a1a1aa;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 6px;
+  transition: color 0.2s ease, background-color 0.2s ease;
 
-export const YouTubePlayerInfoText = styled.Text`
-  color: #fff;
+  &:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
 `;
 
-export const YouTubePlayerSeekBarContainer = styled.View``;
+export const Title = styled.h3`
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
 
-export const YouTubePlayerSeekBar = styled(Slider)`
-  font-size: 16px;
-  font-family: ${fonts.text};
+export const PlayerContainer = styled.div`
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* Proporção 16:9 */
+  background-color: #000000;
+`;
+
+export const IFrame = styled.iframe`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
 `;

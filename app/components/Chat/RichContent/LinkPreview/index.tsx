@@ -6,36 +6,33 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { LinkData } from "@type/interfaces";
-import {
-  Container,
-  VideoIndicator,
-  VideoIndicatorContainer,
-  VideoIndicatorText,
-  WebsiteDescription,
-  WebsiteDescriptionContainer,
-  WebsiteFavicon,
-  WebsiteFaviconContainer,
-  WebsiteHeaderContainer,
-  WebsiteImage,
-  WebsiteImageContainer,
-  WebsiteName,
-  WebsiteNameContainer,
-  WebsiteTitle,
-  WebsiteTitleContainer,
-} from "./styles";
+import { useNavigate } from "react-router";
+import { PlayCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { toast } from "react-toastify"; // Ou a biblioteca de toast de sua preferência
 
-import * as Clipboard from "expo-clipboard";
-import SimpleToast from "react-native-simple-toast";
-import { useImageDimensions } from "@react-native-community/hooks/lib/useImageDimensions";
-import { useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
+import { LinkData } from "~/types/interfaces";
 import YouTubeIFrame, {
   IYouTubeIFrameRef,
-} from "@components/Chat/RichContent/YouTubeIFrame";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { MotiView } from "moti";
-import { useTranslate } from "@hooks/useTranslate";
+} from "~/components/Chat/RichContent/YouTubeIFrame";
+
+import {
+  Container,
+  WebsiteNameContainer,
+  WebsiteName,
+  WebsiteHeaderContainer,
+  WebsiteTitleContainer,
+  WebsiteFaviconContainer,
+  WebsiteFavicon,
+  WebsiteTitle,
+  WebsiteDescriptionContainer,
+  WebsiteDescription,
+  WebsiteImageContainer,
+  WebsiteImage,
+  VideoIndicatorContainer,
+  VideoIndicator,
+  VideoIndicatorText,
+} from "./styles";
 
 interface LinkPreviewProps {
   link: LinkData;
@@ -53,6 +50,9 @@ const LinkPreview: React.FC<LinkPreviewProps> = ({
   const ytIFrameRef = useRef<IYouTubeIFrameRef>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [displayTitle, setDisplayTitle] = useState(link.title || link.link);
+  const [imageError, setImageError] = useState(false);
+
+  const navigate = useNavigate();
 
   const isYoutubeLink = useMemo(() => !!videoId, [videoId]);
 
@@ -63,37 +63,37 @@ const LinkPreview: React.FC<LinkPreviewProps> = ({
     return link.image;
   }, [videoId, link.image]);
 
-  const { dimensions, loading, error } = useImageDimensions({
-    uri: imageUri,
-  });
+  const copyLink = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(link.link);
+        toast.success("Link copiado para a área de transferência!");
+      } catch (err) {
+        console.error("Erro ao copiar link:", err);
+      }
+    },
+    [link.link],
+  );
 
-  const navigation = useNavigation<StackNavigationProp<any>>();
-  const { t } = useTranslate("Components.Chat.LinkPreview");
+  const handlePreview = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
 
-  const copyLink = useCallback(async () => {
-    await Clipboard.setStringAsync(link.link);
-    SimpleToast.show(t("link_copied"), SimpleToast.SHORT);
-  }, [link]);
+      if (isYoutubeLink) {
+        return ytIFrameRef.current?.openYouTubeIFrameModal();
+      }
 
-  const handlePreview = useCallback(() => {
-    if (isYoutubeLink) {
-      return ytIFrameRef.current?.openYouTubeIFrameModal();
-    }
-
-    navigation.navigate("ImagePreview", {
-      name: link.link,
-      url: link.image,
-      antiPrint,
-      conversationType,
-    });
-  }, [
-    antiPrint,
-    conversationType,
-    isYoutubeLink,
-    link.image,
-    link.link,
-    navigation,
-  ]);
+      if (link.image) {
+        navigate(
+          `/preview/image?url=${encodeURIComponent(
+            link.image,
+          )}&title=${encodeURIComponent(link.link)}`,
+        );
+      }
+    },
+    [isYoutubeLink, link.image, link.link, navigate],
+  );
 
   useEffect(() => {
     const fetchYouTubeData = async () => {
@@ -111,7 +111,9 @@ const LinkPreview: React.FC<LinkPreviewProps> = ({
           if (data.title) {
             setDisplayTitle(data.title);
           }
-        } catch (error) {}
+        } catch (error) {
+          console.error("Erro ao buscar dados do YouTube:", error);
+        }
       } else {
         setVideoId(null);
         setDisplayTitle(link.title || link.link);
@@ -119,10 +121,6 @@ const LinkPreview: React.FC<LinkPreviewProps> = ({
     };
     fetchYouTubeData();
   }, [link.link, link.title]);
-
-  if (loading) {
-    return <></>;
-  }
 
   return (
     <>
@@ -133,63 +131,66 @@ const LinkPreview: React.FC<LinkPreviewProps> = ({
           videoUrl={link.link}
         />
       )}
-      <Container>
+      <Container onClick={() => openLink(link.link)}>
         {!!link.siteName && (
           <WebsiteNameContainer>
             <WebsiteName>{link.siteName}</WebsiteName>
           </WebsiteNameContainer>
         )}
+
         <WebsiteHeaderContainer>
           <WebsiteTitleContainer
-            onLongPress={copyLink}
-            onPress={() => openLink(link.link)}
+            onClick={(e) => {
+              e.stopPropagation();
+              openLink(link.link);
+            }}
+            onContextMenu={copyLink}
+            title="Clique para abrir, botão direito para copiar"
           >
             {!!link.favicon && (
               <WebsiteFaviconContainer>
                 <WebsiteFavicon
-                  width={75}
-                  height={75}
-                  source={{ uri: link.favicon }}
+                  src={link.favicon}
+                  alt={link.siteName || "Favicon"}
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
                 />
               </WebsiteFaviconContainer>
             )}
-            <WebsiteTitle numberOfLines={2}>{displayTitle}</WebsiteTitle>
+            <WebsiteTitle>{displayTitle}</WebsiteTitle>
           </WebsiteTitleContainer>
         </WebsiteHeaderContainer>
+
         {!!link.description && (
           <WebsiteDescriptionContainer>
-            <WebsiteDescription numberOfLines={4}>
-              {link.description}
-            </WebsiteDescription>
+            <WebsiteDescription>{link.description}</WebsiteDescription>
           </WebsiteDescriptionContainer>
         )}
-        {!!imageUri && !error && (
-          <WebsiteImageContainer onPress={handlePreview}>
+
+        {!!imageUri && !imageError && (
+          <WebsiteImageContainer onClick={handlePreview}>
             <WebsiteImage
-              aspectRatio={dimensions?.aspectRatio}
-              source={{ uri: imageUri }}
+              src={imageUri}
+              alt={displayTitle}
+              onError={() => setImageError(true)}
+              loading="lazy"
             />
             {isYoutubeLink && (
-              <VideoIndicatorContainer
-                onPress={handlePreview}
-                activeOpacity={0.5}
-              >
-                <MotiView
+              <VideoIndicatorContainer onClick={handlePreview}>
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1] }}
                   transition={{
-                    repeat: 3,
-                    type: "timing",
-                    duration: 1500,
+                    duration: 1.8,
+                    repeat: Infinity,
+                    ease: "easeInOut",
                   }}
                 >
                   <VideoIndicator>
-                    <MaterialCommunityIcons
-                      name="play-circle"
-                      size={35}
-                      color="#fff"
-                    />
-                    <VideoIndicatorText>{t("watch_text")}</VideoIndicatorText>
+                    <PlayCircle size={36} color="#ffffff" />
+                    <VideoIndicatorText>Assistir Vídeo</VideoIndicatorText>
                   </VideoIndicator>
-                </MotiView>
+                </motion.div>
               </VideoIndicatorContainer>
             )}
           </WebsiteImageContainer>

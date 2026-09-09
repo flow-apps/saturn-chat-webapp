@@ -1,101 +1,52 @@
-import fonts from "@styles/fonts";
-import styled from "styled-components/native";
+import styled from "styled-components";
 
-export const FileSendedProgressContainer = styled.View`
-  background-color: ${(props) => props.theme.colors.shape};
-  padding: 10px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-`;
-
-export const FileSendedText = styled.Text`
-  font-family: ${fonts.heading};
-  font-size: 16px;
-  color: ${(props) => props.theme.colors.secondary};
-  margin-bottom: 10px;
-`;
-
-export const FormContainer = styled.View`
-  margin-bottom: 10px;
-`;
-
-export const InputContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-
-  background: ${(props) => props.theme.colors.shape};
-  border: 1px solid ${(props) => props.theme.colors.dark_gray};
-  padding: 15px;
-  border-radius: 50px;
-  margin-top: 10px;
-`;
-
-export const OptionsContainer = styled.View`
-  flex-direction: row;
-`;
-
-export const OptionsButton = styled.TouchableOpacity`
-  margin-right: 10px;
-`;
-
-export const SendButton = styled.TouchableOpacity``;
-
-export const MessageInput = styled.TextInput.attrs({
-  multiline: true,
-})`
-  flex: 1;
-  font-family: ${fonts.text};
-  margin: 0px 10px;
-  max-height: 120px;
-  color: ${(props) => props.theme.colors.black};
-`;
-
-export const AudioContainer = styled.View``;
-
-export const AudioButton = styled.Pressable``;
-
-export const AdBannerWrapper = styled.View`
-  padding: 10px;
-`;
-
-export const NoSendMessageContainer = styled.View`
-  background-color: ${(props) => props.theme.colors.shape};
-  width: 100%;
-  padding: 20px 10px;
-  border-top-right-radius: 15px;
-  border-top-left-radius: 15px;
-`;
-
-export const NoSendMessageText = styled.Text`
-  text-align: center;
-  font-family: ${fonts.quote};
-  color: ${(props) => props.theme.colors.black};
-`;
-
-export const NoSendMessageTextFeature = styled.Text`
-  color: ${(props) => props.theme.colors.secondary};
-`;
-
-export const AudioRecordingContainer = styled.View`
+export const AudioRecordingContainer = styled.div`
+  display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  background-color: ${({ theme }) => theme.colors.shape || "#1E1E1E"};
+  background-color: ${({ theme }) => theme.colors?.shape || "#18181b"};
   border-radius: 24px;
   padding: 8px 16px;
   min-height: 48px;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 `;
 
-export const CancelAudioButton = styled.TouchableOpacity`
-  padding: 8px;
-`;
-
-export const SendAudioButton = styled.TouchableOpacity`
-  background-color: ${({ theme }) => theme.colors.primary};
-  border-radius: 20px;
-  padding: 8px;
+export const CancelAudioButton = styled.button`
+  background: transparent;
+  border: none;
+  color: ${({ theme }) => theme.colors?.red || "#ef4444"};
+  cursor: pointer;
+  display: flex;
   align-items: center;
   justify-content: center;
+  padding: 8px;
+  border-radius: 50%;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+`;
+
+export const SendAudioButton = styled.button`
+  background-color: ${({ theme }) => theme.colors?.primary || "#3b82f6"};
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+
+  &:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
 `;

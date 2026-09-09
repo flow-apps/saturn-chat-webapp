@@ -1,35 +1,38 @@
 import React from "react";
-import Feather from "@expo/vector-icons/Feather";
-import { millisToTime } from "@utils/format";
+import { Mic } from "lucide-react";
+import { secondsToTime } from "~/utils/format";
 import {
   RecordingAudioContainer,
   RecordingAudioWrapper,
   RecordingAudioText,
   RecordingAudioDuration,
+  RecordingPulseDot,
 } from "./styles";
-import { useTheme } from "styled-components";
-import { useTranslate } from "@hooks/useTranslate";
 
 interface RecordingAudioProps {
-  audioDuration: number;
+  audioDuration: number; // Duração em milissegundos ou segundos
 }
 
-const RecordingAudio = ({ audioDuration }: RecordingAudioProps) => {
-  const { colors } = useTheme();
-  const { t } = useTranslate("Components.Chat.RecordingAudio");
+const RecordingAudio: React.FC<RecordingAudioProps> = ({ audioDuration }) => {
+  // Converte de milissegundos para segundos se necessário
+  const durationInSeconds =
+    audioDuration > 1000
+      ? Math.round(audioDuration / 1000)
+      : audioDuration;
 
   return (
     <RecordingAudioContainer>
       <RecordingAudioWrapper>
-        <RecordingAudioText>
-          <Feather name="mic" size={20} color={colors.red} /> {t("recording")}
-        </RecordingAudioText>
+        <RecordingPulseDot />
+        <Mic size={18} style={{ color: "#ef4444" }} />
+        <RecordingAudioText>Gravando áudio...</RecordingAudioText>
       </RecordingAudioWrapper>
+
       <RecordingAudioDuration>
-        {millisToTime(audioDuration)}
+        {secondsToTime(durationInSeconds)}
       </RecordingAudioDuration>
     </RecordingAudioContainer>
   );
 };
 
-export default RecordingAudio;
+export default React.memo(RecordingAudio);

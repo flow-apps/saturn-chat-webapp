@@ -1,10 +1,8 @@
 import React, { memo, useCallback, useMemo } from "react";
-import Feather from "@expo/vector-icons/Feather";
-import { useTheme } from "styled-components/native";
-import { MotiView } from "moti";
-import { useAuth } from "@contexts/auth";
-import { useWebsocket } from "@contexts/websocket";
-import { PollData } from "@type/interfaces";
+import { CheckCircle2, Circle, Square } from "lucide-react";
+import { useAuth } from "~/contexts/auth";
+import { useWebsocket } from "~/contexts/websocket";
+import { PollData } from "~/types/interfaces";
 
 import {
   Container,
@@ -12,6 +10,7 @@ import {
   SubtitleText,
   OptionsContainer,
   OptionButton,
+  ProgressBar,
   OptionContent,
   OptionInfo,
   OptionText,
@@ -32,14 +31,13 @@ interface PollMessageProps {
 
 export const PollMessage: React.FC<PollMessageProps> = memo(
   ({ poll, groupId }) => {
-    const { colors } = useTheme();
     const { user } = useAuth();
     const { socket } = useWebsocket();
 
     const totalVotes = useMemo(() => {
       return poll.options.reduce(
         (acc, curr) => acc + (curr.votes_count || 0),
-        0,
+        0
       );
     }, [poll.options]);
 
@@ -59,7 +57,7 @@ export const PollMessage: React.FC<PollMessageProps> = memo(
         }
 
         console.log(
-          "Socket desconectado ao votar. Tentando reconectar e emitir...",
+          "Socket desconectado ao votar. Tentando reconectar e emitir..."
         );
         socket.connect();
 
@@ -74,7 +72,7 @@ export const PollMessage: React.FC<PollMessageProps> = memo(
           socket.off("connect", onConnectOnce);
         }, 5000);
       },
-      [socket, user, poll.id, groupId],
+      [socket, user, poll.id, groupId]
     );
 
     const userVotedOptionIds = useMemo(() => {
@@ -90,6 +88,16 @@ export const PollMessage: React.FC<PollMessageProps> = memo(
 
       return votedIds;
     }, [poll?.options, user?.id]);
+
+    const renderIcon = (isSelected: boolean) => {
+      if (isSelected) {
+        return <CheckCircle2 size={18} />;
+      }
+      if (poll.allows_multiple) {
+        return <Square size={18} />;
+      }
+      return <Circle size={18} />;
+    };
 
     return (
       <Container>
@@ -108,54 +116,21 @@ export const PollMessage: React.FC<PollMessageProps> = memo(
               totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
             const isSelected = userVotedOptionIds.has(option.id);
 
-            const progressBgColor = isSelected
-              ? colors.primary + "35"
-              : colors.secondary + "20";
-
             return (
               <OptionButton
                 key={option.id}
-                onPress={() => handleVote(option.id)}
-                activeOpacity={0.7}
-                style={{ overflow: "hidden", position: "relative" }}
+                onClick={() => handleVote(option.id)}
+                type="button"
               >
-                <MotiView
-                  animate={{
-                    width: `${percentage}%`,
-                    backgroundColor: progressBgColor,
-                  }}
-                  transition={{
-                    type: "timing",
-                    duration: 350,
-                  }}
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    right: percentage === 100 ? 0 : undefined,
-                    borderRadius: 10,
-                  }}
+                <ProgressBar
+                  $percentage={percentage}
+                  $isSelected={isSelected}
                 />
 
                 <OptionContent>
-                  <OptionInfo>
-                    <Feather
-                      name={
-                        isSelected
-                          ? "check-circle"
-                          : poll.allows_multiple
-                            ? "square"
-                            : "circle"
-                      }
-                      size={18}
-                      color={
-                        isSelected
-                          ? colors.primary
-                          : colors.dark_heading || "#9CA3AF"
-                      }
-                    />
-                    <OptionText isSelected={isSelected}>
+                  <OptionInfo $isSelected={isSelected}>
+                    {renderIcon(isSelected)}
+                    <OptionText $isSelected={isSelected}>
                       {option.option_text}
                     </OptionText>
                   </OptionInfo>
@@ -174,5 +149,5 @@ export const PollMessage: React.FC<PollMessageProps> = memo(
         </TotalVotesText>
       </Container>
     );
-  },
+  }
 );

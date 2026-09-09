@@ -1,27 +1,30 @@
 import React, { memo, useEffect, useState } from "react";
-import SimpleToast from "react-native-simple-toast";
-import { InviteData } from "@type/interfaces";
-import { useAuth } from "@contexts/auth";
-import { ParticipantData } from "@pages/Home";
-import api from "@services/api";
-import LoadingIndicator from "@components/LoadingIndicator";
-
-import analytics from "@react-native-firebase/analytics";
+import { toast } from "react-toastify";
+import { InviteData } from "~/types/interfaces";
+import { useAuth } from "~/contexts/auth";
+import api from "~/services/api";
+import LoadingIndicator from "~/components/LoadingIndicator";
+import { ParticipantStates } from "~/types/enums";
 
 import {
-  AcceptInviteButton,
-  AcceptInviteText,
   Container,
-  GroupAvatar,
+  InviteTitle,
   GroupContainer,
+  GroupRightSideContainer,
   GroupLeftSideContainer,
+  GroupAvatar,
   GroupName,
   GroupDescription,
-  GroupRightSideContainer,
-  InviteTitle,
+  AcceptInviteButton,
 } from "./styles";
-import { useTranslate } from "@hooks/useTranslate";
-import { ParticipantStates } from "@type/enums";
+
+interface ParticipantData {
+  group_id: string;
+  state: ParticipantStates;
+  group: {
+    name: string;
+  };
+}
 
 interface InviteInMessageProps {
   inviteID: string;
@@ -33,57 +36,57 @@ const InviteInMessage: React.FC<InviteInMessageProps> = ({ inviteID }) => {
   const [participating, setParticipating] = useState(false);
 
   const { user } = useAuth();
-  const { t } = useTranslate("Components.Chat.InviteInMessage");
 
   useEffect(() => {
+    let isMounted = true;
+
     (async () => {
       setLoading(true);
-      api
-        .get(`/invites/${inviteID}?user_id=${user?.id}`)
-        .then((res) => {
-          if (res.status === 200) {
-            setInvite(res.data.invite);
+      try {
+        const res = await api.get(`/invites/${inviteID}?user_id=${user?.id}`);
+        if (res.status === 200 && isMounted) {
+          setInvite(res.data.invite);
 
-            const participant = res.data?.participant as ParticipantData;
+          const participant = res.data?.participant as ParticipantData;
 
-            if (!participant) {
-              return setParticipating(false);
-            }
-
-            if (participant.state === ParticipantStates.JOINED) {
-              setParticipating(true);
-            }
+          if (!participant) {
+            setParticipating(false);
+          } else if (participant.state === ParticipantStates.JOINED) {
+            setParticipating(true);
           }
-        })
-        .catch(() => setInvite(null))
-        .finally(() => {
-          setLoading(false);
-        });
+        }
+      } catch (error) {
+        if (isMounted) setInvite(null);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     })();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [inviteID, user?.id]);
 
   const handleJoin = async () => {
-    await api
-      .get(`/inv/join/${inviteID}`)
-      .then((res) => {
-        if (res.status === 200) {
-          const data = res.data as ParticipantData;
+    try {
+      const res = await api.get(`/inv/join/${inviteID}`);
+      if (res.status === 200) {
+        const data = res.data as ParticipantData;
 
-          analytics().logEvent("join_group", {
+        // Dispara evento para o Google Analytics Web (caso configurado com window.gtag)
+        if (typeof window !== "undefined" && (window as any).gtag) {
+          (window as any).gtag("event", "join_group", {
             method: "invite",
             group_id: data.group_id,
           });
-
-          SimpleToast.show(
-            t("toasts.joined", { name: data.group.name }),
-            SimpleToast.SHORT
-          );
-          setParticipating(true);
         }
-      })
-      .catch((err) => {
-        SimpleToast.show(t("toasts.error"), SimpleToast.SHORT);
-      });
+
+        toast.success(`Você entrou no grupo ${data.group.name}!`);
+        setParticipating(true);
+      }
+    } catch (err) {
+      toast.error("Erro ao tentar entrar no grupo pelo convite.");
+    }
   };
 
   if (loading) {
@@ -98,37 +101,39 @@ const InviteInMessage: React.FC<InviteInMessageProps> = ({ inviteID }) => {
     return (
       <Container>
         <GroupRightSideContainer>
-          <GroupName>{t("invalid_invite_title")}</GroupName>
-          <GroupDescription>{t("invalid_invite_subtitle")}</GroupDescription>
+          <GroupName>Convite inválido ou expirado</GroupName>
+          <GroupDescription>Este link de convite não é mais válido.</GroupDescription>
         </GroupRightSideContainer>
       </Container>
     );
   }
 
   return (
-    <>
-      <Container>
-        <InviteTitle>{t("invite_title")}</InviteTitle>
-        <GroupContainer>
-          <GroupRightSideContainer>
-            <GroupAvatar uri={invite?.group?.group_avatar?.url} />
-          </GroupRightSideContainer>
-          <GroupLeftSideContainer>
-            <GroupName numberOfLines={1} ellipsizeMode="middle">
-              {invite.group.name}
-            </GroupName>
-            <GroupDescription numberOfLines={2}>
-              {invite.group.description || t("no_desc")}
-            </GroupDescription>
-          </GroupLeftSideContainer>
-        </GroupContainer>
-        <AcceptInviteButton onPress={handleJoin} enabled={!participating}>
-          <AcceptInviteText>
-            {participating ? t("joined_text") : t("join_text")}
-          </AcceptInviteText>
-        </AcceptInviteButton>
-      </Container>
-    </>
+    <Container>
+      <InviteTitle>CONVITE DE GRUPO</InviteTitle>
+      <GroupContainer>
+        <GroupRightSideContainer>
+          <GroupAvatar
+            src={invite?.group?.group_avatar?.url || "/group-placeholder.png"}
+            alt={invite.group.name}
+          />
+        </GroupRightSideContainer>
+        <GroupLeftSideContainer>
+          <GroupName title={invite.group.name}>{invite.group.name}</GroupName>
+          <GroupDescription>
+            {invite.group.description || "Sem descrição disponível."}
+          </GroupDescription>
+        </GroupLeftSideContainer>
+      </GroupContainer>
+
+      <AcceptInviteButton
+        onClick={handleJoin}
+        disabled={participating}
+        $participating={participating}
+      >
+        {participating ? "Já participante" : "Entrar no Grupo"}
+      </AcceptInviteButton>
+    </Container>
   );
 };
 

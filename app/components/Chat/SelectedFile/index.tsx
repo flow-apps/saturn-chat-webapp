@@ -1,51 +1,57 @@
-import React from "react";
-import { File, ImageFile, OtherFile, RemoveFileButton } from "./styles";
-import Feather from "@expo/vector-icons/Feather";
-import { useTheme } from "styled-components";
-import { DocumentPickerAsset } from "expo-document-picker";
+import React, { useMemo, useEffect } from "react";
+import { X, FileText } from "lucide-react";
+import { motion } from "framer-motion";
+import { FileContainer, ImageFile, OtherFile, RemoveFileButton } from "./styles";
 
-interface File {
-  file: DocumentPickerAsset;
+export interface SelectedFileType {
+  file: File;
   type: string;
 }
 
 interface FileProps {
-  file: File;
-  onRemoveFile: () => any;
+  file: SelectedFileType;
+  onRemoveFile: () => void;
 }
 
 const SelectedFile = ({ onRemoveFile, file }: FileProps) => {
-  const { colors } = useTheme();      
+  // Gera URL temporária para o pré-visualizador de imagem do navegador
+  const imagePreviewUrl = useMemo(() => {
+    if (file.type === "image" && file.file) {
+      return URL.createObjectURL(file.file);
+    }
+    return null;
+  }, [file]);
+
+  // Libera a memória da URL criada quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl]);
 
   return (
-    <File
-      from={{
-        opacity: 0,
-      }}
-      animate={{
-        opacity: 1,
-      }}
-      transition={{
-        type: "timing",
-        duration: 1000,
-      }}
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ duration: 0.2 }}
     >
-      <RemoveFileButton onPress={onRemoveFile}>
-        <Feather name="x" size={14} color={colors.secondary} />
-      </RemoveFileButton>
-      {file.type === "image" ? (
-        <ImageFile source={{ uri: file.file.uri }}
-          // @ts-ignore
-          width={80}
-          height={80}
-          resizeMode="cover"
-        />
-      ) : (
-        <OtherFile>
-          <Feather name="file" size={25} color={colors.black} />
-        </OtherFile>
-      )}
-    </File>
+      <FileContainer>
+        <RemoveFileButton onClick={onRemoveFile} type="button" title="Remover arquivo">
+          <X size={14} />
+        </RemoveFileButton>
+
+        {file.type === "image" && imagePreviewUrl ? (
+          <ImageFile src={imagePreviewUrl} alt={file.file.name || "Prévia"} />
+        ) : (
+          <OtherFile title={file.file?.name}>
+            <FileText size={28} />
+          </OtherFile>
+        )}
+      </FileContainer>
+    </motion.div>
   );
 };
 
