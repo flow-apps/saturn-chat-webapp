@@ -10,6 +10,11 @@ import {
 import type { Route } from "./+types/root";
 import { AuthProvider } from "./contexts/auth";
 import { ThemeControllerProvider } from "./contexts/theme";
+import { WebsocketProvider } from "./contexts/websocket";
+import { AudioPlayerProvider } from "./contexts/audioPlayer";
+import { PurchasesProvider } from "./contexts/purchases";
+import { PremiumProvider } from "./contexts/premium";
+import { ChatProvider } from "./contexts/chat";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -35,7 +40,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ThemeControllerProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <PurchasesProvider>
+              <PremiumProvider>
+                <WebsocketProvider>
+                  <ChatProvider>
+                    <AudioPlayerProvider>{children}</AudioPlayerProvider>
+                  </ChatProvider>
+                </WebsocketProvider>
+              </PremiumProvider>
+            </PurchasesProvider>
+          </AuthProvider>
         </ThemeControllerProvider>
         <ScrollRestoration />
         <Scripts />

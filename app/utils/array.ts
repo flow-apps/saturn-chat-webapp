@@ -1,11 +1,11 @@
-import { compact, union } from "lodash"
+import _ from "lodash";
 
 type TFinder<P> = (value: P, index: number) => boolean;
 type TIterator<P> = (item: P, index: number) => Promise<any> | any;
 
 class ArrayUtils {
   compact(array: any[]) {
-    return compact(array);
+    return _.compact(array);
   }
 
   union(oldArray: any[], newArray: any[]) {
@@ -14,7 +14,7 @@ class ArrayUtils {
       ...this.compact(newArray),
     ];
 
-    const unionArray = union(compactedArrays);
+    const unionArray = _.union(compactedArrays);
 
     return unionArray;
   }
@@ -37,7 +37,7 @@ class ArrayUtils {
   findFirst<T>(array: T[], finder: TFinder<T>) {
     if (!array || !finder) return undefined;
 
-    let findItem: T;
+    let findItem: T | undefined;
 
     for (let i = 0; i < array.length; i++) {
       if (finder(array[i], i)) {
@@ -56,7 +56,7 @@ class ArrayUtils {
 
     for (let i = 0; i < array.length; i++) {
       if (!finder(array[i], i)) {
-        arrayWithoutItem.push(array[i])
+        arrayWithoutItem.push(array[i]);
       }
     }
 
@@ -68,8 +68,8 @@ class ArrayUtils {
 
     let iteratedArray: T[] = [];
 
-    for (let i = 0; i<array.length;i++) {
-      iteratedArray[i] = callback(array[i], i)
+    for (let i = 0; i < array.length; i++) {
+      iteratedArray[i] = callback(array[i], i);
     }
 
     return iteratedArray;

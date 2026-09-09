@@ -1,10 +1,6 @@
-import * as ExpoLinking from "expo-linking";
-import { Linking } from "react-native";
-import { ArrayUtils } from "./array";
 import URLParse from "url-parse";
-import SimpleToast from "react-native-simple-toast";
-import RNBrowser from "react-native-inappbrowser-reborn";
-import config from "@config";
+import config from "~/config";
+import { ArrayUtils } from "./array";
 
 class LinkUtils {
   isSaturnChatLink(url: string) {
@@ -19,7 +15,9 @@ class LinkUtils {
     if (!path) return false;
     const arrayUtils = new ArrayUtils();
     const paths = ["invite"];
-    const separatedPath = (path.split("/").filter(Boolean).shift() ?? "").toLowerCase();
+    const separatedPath = (
+      path.split("/").filter(Boolean).shift() ?? ""
+    ).toLowerCase();
 
     return arrayUtils.has(paths, (p) => separatedPath === p);
   }
@@ -30,7 +28,7 @@ class LinkUtils {
     }
 
     return (text.match(
-      /\b((https?):\/\/|(www)\.)[-A-Z0-9+&@#\/%?=~_|$!:,.;]*[A-Z0-9+&@#\/%=~_|$]/gi
+      /\b((https?):\/\/|(www)\.)[-A-Z0-9+&@#\/%?=~_|$!:,.;]*[A-Z0-9+&@#\/%=~_|$]/gi,
     ) || []) as string[];
   }
 
@@ -49,47 +47,33 @@ class LinkUtils {
     return { isInvite: false };
   }
 
-  async openLink(url: string) {
-    const isSaturnChatLink = this.isSaturnChatLink(url);
+  async openLink(url: string, navigate?: (path: string) => void) {
+    if (!url) return;
+
+    const formattedUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    const isSaturnChatLink = this.isSaturnChatLink(formattedUrl);
 
     if (isSaturnChatLink) {
-      const { path, queryParams } = ExpoLinking.parse(url);
+      const parsed = new URLParse(formattedUrl, true);
+      const pathname = parsed.pathname;
 
-      console.log(path);
-      
-
-      if (path && this.hasSaturnChatDeepLinkInApp(path)) {
-        const deepURL = ExpoLinking.createURL(path, {
-          queryParams: queryParams || undefined,
-        });
-
-        if (await ExpoLinking.canOpenURL(deepURL)) {
-          await ExpoLinking.openURL(deepURL);
+      if (pathname && this.hasSaturnChatDeepLinkInApp(pathname)) {
+        if (navigate) {
+          navigate(pathname + (parsed.query ? `?${parsed.query}` : ""));
           return;
         }
+
+        window.location.href =
+          pathname + (parsed.query ? `?${parsed.query}` : "");
+        return;
       }
     }
 
     try {
-      const isAvailable = await RNBrowser.isAvailable();
-
-      if (!isAvailable) {
-        if (await Linking.canOpenURL(url)) {
-          return await Linking.openURL(url);
-        } else {
-          SimpleToast.show("Não é possível abrir o link", SimpleToast.SHORT);
-          return;
-        }
-      }
-
-      await RNBrowser.open(url, {
-        toolbarColor: "#0088FF",
-        secondaryToolbarColor: "#FF9D00",
-        modalEnabled: true,
-        showTitle: true,
-      });
+      window.open(formattedUrl, "_blank", "noopener,noreferrer");
     } catch (error) {
-      return await Linking.openURL(url);
+      console.error("Erro ao abrir o link:", error);
+      window.location.href = formattedUrl;
     }
   }
 }

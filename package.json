@@ -13,14 +13,21 @@
     "@react-router/serve": "^8",
     "axios": "^1.20.0",
     "colord": "^2.10.0",
+    "framer-motion": "^13.2.0",
     "isbot": "^5.1.36",
     "js-cookie": "^3.0.8",
     "lodash": "^4.18.1",
+    "lottie-react": "^3.1.2",
     "lucide-react": "^1.43.0",
+    "moment": "^2.30.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-markdown": "^10.1.0",
     "react-router": "^8",
-    "styled-components": "^6.5.3"
+    "remark-gfm": "^4.0.1",
+    "socket.io-client": "^4.8.3",
+    "styled-components": "^6.5.3",
+    "url-parse": "^1.5.10"
   },
   "devDependencies": {
     "@react-router/dev": "^8",
@@ -30,6 +37,7 @@
     "@types/node": "^22",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/url-parse": "^1.4.11",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite": "^8.0.3"
