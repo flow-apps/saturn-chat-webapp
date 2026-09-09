@@ -1,3 +1,4 @@
+import Home from "~/pages/Home";
 import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
@@ -7,10 +8,6 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export default function Home() {
-  return (
-    <div>
-      <h1>Esta será a tela de chat</h1>
-    </div>
-  );
+export default function HomePage() {
+  return <Home />;
 }
