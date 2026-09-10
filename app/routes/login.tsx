@@ -4,7 +4,7 @@ import Login from "~/pages/Auth/Login";
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Login Page" },
-    { name: "description", content: "Welcome to React Router!" },
+    { name: "description", content: "Acesse sua conta" },
   ];
 }
 

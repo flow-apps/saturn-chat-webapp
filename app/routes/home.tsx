@@ -4,7 +4,7 @@ import type { Route } from "./+types/home";
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Grupos" },
-    { name: "description", content: "Welcome to React Router!" },
+    { name: "description", content: "Converse em grupo com seus amigos" },
   ];
 }
 

@@ -5,7 +5,11 @@ import Login from "~/pages/Auth/Login";
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Faça seu cadastro" },
-    { name: "description", content: "Welcome to React Router!" },
+    {
+      name: "description",
+      content:
+        "Que bom ver você por aqui! Vamos iniciar essa jornada pelo universo? Basta criar sua conta para começar",
+    },
   ];
 }
 
