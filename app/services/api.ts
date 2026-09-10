@@ -5,11 +5,12 @@ import configs from "~/config";
 
 const TOKEN_COOKIE_KEY = "@SaturnChat:token";
 
+const isProduction = import.meta.env.PROD;
+
 const api = axios.create({
-  baseURL: configs.PROD_API_URL, // Substitua pela sua URL base
+  baseURL: isProduction ? configs.PROD_API_URL : configs.DEV_API_URL,
 });
 
-// Interceptor para injetar o Token dinamicamente em TODAS as requisições
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = Cookies.get(TOKEN_COOKIE_KEY);
