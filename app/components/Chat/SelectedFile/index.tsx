@@ -1,20 +1,21 @@
 import React, { useMemo, useEffect } from "react";
 import { X, FileText } from "lucide-react";
 import { motion } from "framer-motion";
-import { FileContainer, ImageFile, OtherFile, RemoveFileButton } from "./styles";
+import {
+  FileContainer,
+  ImageFile,
+  OtherFile,
+  RemoveFileButton,
+} from "./styles";
+import { File as FileType } from "../ChatInput/types";
 
-export interface SelectedFileType {
-  file: File;
-  type: string;
-}
-
-interface FileProps {
-  file: SelectedFileType;
+interface SelectedFileProps {
+  file: FileType;
   onRemoveFile: () => void;
 }
 
-const SelectedFile = ({ onRemoveFile, file }: FileProps) => {
-  // Gera URL temporária para o pré-visualizador de imagem do navegador
+const SelectedFile = ({ onRemoveFile, file }: SelectedFileProps) => {
+  // Gera uma Object URL temporária para o navegador conseguir renderizar a prévia da imagem
   const imagePreviewUrl = useMemo(() => {
     if (file.type === "image" && file.file) {
       return URL.createObjectURL(file.file);
@@ -22,7 +23,7 @@ const SelectedFile = ({ onRemoveFile, file }: FileProps) => {
     return null;
   }, [file]);
 
-  // Libera a memória da URL criada quando o componente for desmontado
+  // Libera a memória alocada pela URL temporária quando o componente for desmontado
   useEffect(() => {
     return () => {
       if (imagePreviewUrl) {
@@ -39,7 +40,11 @@ const SelectedFile = ({ onRemoveFile, file }: FileProps) => {
       transition={{ duration: 0.2 }}
     >
       <FileContainer>
-        <RemoveFileButton onClick={onRemoveFile} type="button" title="Remover arquivo">
+        <RemoveFileButton
+          onClick={onRemoveFile}
+          type="button"
+          title="Remover arquivo"
+        >
           <X size={14} />
         </RemoveFileButton>
 

@@ -72,16 +72,25 @@ const FilePreview = ({
 
   const { token } = useAuth();
 
-  // Carrega mídias com cabeçalho de autenticação
+  // Tratamento universal de mídia (Blob local x URL remota autenticada)
   useEffect(() => {
     let isMounted = true;
     let createdUrl = "";
 
-    const fetchProtectedMedia = async () => {
+    const loadMedia = async () => {
       if (!url) return;
 
+      // Se a URL já for um Blob local (prévia de upload) ou Base64, usa diretamente
       if (url.startsWith("blob:") || url.startsWith("data:")) {
-        setProtectedObjectUrl(url);
+        if (isMounted) {
+          setProtectedObjectUrl(url);
+          setLoadingMedia(false);
+        }
+        return;
+      }
+
+      // Se for URL remota, aguarda o token estar disponível antes de disparar o fetch
+      if (!token) {
         return;
       }
 
@@ -90,22 +99,30 @@ const FilePreview = ({
       try {
         const response = await fetch(url, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            authorization: token,
           },
         });
 
         if (!response.ok) {
-          throw new Error("Erro ao carregar mídia autenticada");
+          throw new Error("Erro ao carregar arquivo autenticado");
         }
 
-        const blob = await response.blob();
+        const rawBlob = await response.blob();
+        
+        // Preserva e força o tipo MIME correto para suportar todos os formatos (png, webp, svg, jpg, etc.)
+        const mimeType = rawBlob.type || (type === "image" ? "image/*" : undefined);
+        const blob = new Blob([rawBlob], { type: mimeType });
+        
         createdUrl = window.URL.createObjectURL(blob);
 
         if (isMounted) {
           setProtectedObjectUrl(createdUrl);
         }
       } catch (error) {
-        console.error("Erro no carregamento de mídia com cabeçalho:", error);
+        console.error("Erro no carregamento de mídia autenticada:", error);
+        if (isMounted) {
+          setProtectedObjectUrl(url); // Fallback usando a URL original
+        }
       } finally {
         if (isMounted) {
           setLoadingMedia(false);
@@ -113,17 +130,18 @@ const FilePreview = ({
       }
     };
 
-    fetchProtectedMedia();
+    loadMedia();
 
+    // Limpeza da memória ao desmontar ou trocar de URL
     return () => {
       isMounted = false;
       if (createdUrl) {
         window.URL.revokeObjectURL(createdUrl);
       }
     };
-  }, [url, token]);
+  }, [url, token, type]);
 
-  // Tecla 'Escape' fecha o modal
+  // Fechar o modal pressionando a tecla 'Escape'
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && activeModal) {
@@ -149,13 +167,30 @@ const FilePreview = ({
     if (!url) return;
 
     try {
+      if (protectedObjectUrl && protectedObjectUrl.startsWith("blob:")) {
+        const link = document.createElement("a");
+        link.href = protectedObjectUrl;
+        link.download = original_name || name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      
+
       const response = await fetch(url, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          authorization: token,
         },
       });
 
-      const blob = await response.blob();
+      if (!response.ok) {
+        throw new Error("Erro ao baixar arquivo autenticado");
+      }
+
+      const rawBlob = await response.blob();
+      const blob = new Blob([rawBlob], { type: rawBlob.type });
       const blobUrl = window.URL.createObjectURL(blob);
 
       const link = document.createElement("a");
@@ -167,12 +202,7 @@ const FilePreview = ({
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Erro ao baixar arquivo:", error);
-      if (protectedObjectUrl) {
-        const link = document.createElement("a");
-        link.href = protectedObjectUrl;
-        link.download = original_name || name;
-        link.click();
-      }
+      window.open(url, "_blank");
     }
   }, [url, token, original_name, name, protectedObjectUrl]);
 
@@ -281,16 +311,6 @@ const FilePreview = ({
   return (
     <>
       <Container>
-        <CustomAlert
-          title="Baixar Arquivo"
-          content={`Deseja fazer o download do arquivo "${original_name}"?`}
-          visible={downloadWarning}
-          cancelButtonText="Cancelar"
-          okButtonText="Baixar"
-          okButtonAction={downloadFile}
-          cancelButtonAction={() => setDownloadWarning(false)}
-        />
-
         <FileContainer>
           <FileIconContainer>{renderIcon()}</FileIconContainer>
           <FileInfosContainer>
@@ -340,6 +360,17 @@ const FilePreview = ({
           </ModalContainer>
         </Overlay>
       )}
+
+      {/* ALERT DE CONFIRMAÇÃO NO FIM DA ÁRVORE PARA FICAR SOBREPOSTO */}
+      <CustomAlert
+        title="Baixar Arquivo"
+        content={`Deseja fazer o download do arquivo "${original_name}"?`}
+        visible={downloadWarning}
+        cancelButtonText="Cancelar"
+        okButtonText="Baixar"
+        okButtonAction={downloadFile}
+        cancelButtonAction={() => setDownloadWarning(false)}
+      />
     </>
   );
 };

@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SelectedFile from "~/components/Chat/SelectedFile";
-import { FilesContainer, FilesList } from "./styles";
+import { FileContainer } from "./styles";
 
 export interface FileItem {
   file: File;
@@ -17,7 +17,7 @@ const SelectedFiles = ({ files, onFileRemove }: SelectedFilesProps) => {
   if (!files || files.length === 0) return null;
 
   return (
-    <FilesContainer>
+    <FileContainer>
       <motion.div
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: 100 }}
@@ -25,7 +25,7 @@ const SelectedFiles = ({ files, onFileRemove }: SelectedFilesProps) => {
         transition={{ duration: 0.25, ease: "easeInOut" }}
         style={{ width: "100%", height: "100%" }}
       >
-        <FilesList>
+        <div>
           <AnimatePresence>
             {files.map((item, index) => (
               <SelectedFile
@@ -35,9 +35,9 @@ const SelectedFiles = ({ files, onFileRemove }: SelectedFilesProps) => {
               />
             ))}
           </AnimatePresence>
-        </FilesList>
+        </div>
       </motion.div>
-    </FilesContainer>
+    </FileContainer>
   );
 };
 

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Play, Pause } from "lucide-react";
 import { secondsToTime } from "~/utils/format";
 import { useAudioPlayer } from "~/contexts/audioPlayer";
+import { useAuth } from "~/contexts/auth";
 
 import {
   Container,
@@ -23,42 +24,90 @@ interface AudioPreviewProps {
 
 const AudioPreview: React.FC<AudioPreviewProps> = ({ audio }) => {
   const { currentAudioName, setCurrentAudioName } = useAudioPlayer();
+  const { token } = useAuth();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPosition, setCurrentPosition] = useState(0);
   const [duration, setDuration] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const objectUrlRef = useRef<string>("");
 
   useEffect(() => {
-    const audioElement = new Audio(audio.url);
-    audioRef.current = audioElement;
+    let isMounted = true;
 
-    const handleLoadedMetadata = () => {
-      setDuration(Math.ceil(audioElement.duration || 0));
+    const setupAudio = async () => {
+      if (!audio.url) return;
+
+      let finalAudioUrl = audio.url;
+
+      if (!audio.url.startsWith("blob:") && !audio.url.startsWith("data:")) {
+        if (!token) return;
+
+        try {
+          const response = await fetch(audio.url, {
+            headers: {
+              authorization: token,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Erro ao carregar áudio autenticado");
+          }
+
+          const rawBlob = await response.blob();
+          const mimeType = rawBlob.type || "audio/*";
+          const blob = new Blob([rawBlob], { type: mimeType });
+          
+          finalAudioUrl = window.URL.createObjectURL(blob);
+          objectUrlRef.current = finalAudioUrl;
+        } catch (error) {
+          console.error("Erro no carregamento do áudio protegido:", error);
+          finalAudioUrl = audio.url; // Fallback
+        }
+      }
+
+      if (!isMounted) {
+        if (objectUrlRef.current) {
+          window.URL.revokeObjectURL(objectUrlRef.current);
+        }
+        return;
+      }
+
+      const audioElement = new Audio(finalAudioUrl);
+      audioRef.current = audioElement;
+
+      const handleLoadedMetadata = () => {
+        setDuration(Math.ceil(audioElement.duration || 0));
+      };
+
+      const handleTimeUpdate = () => {
+        setCurrentPosition(Math.ceil(audioElement.currentTime));
+      };
+
+      const handleEnded = () => {
+        setIsPlaying(false);
+        setCurrentPosition(0);
+        setCurrentAudioName("");
+      };
+
+      audioElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+      audioElement.addEventListener("timeupdate", handleTimeUpdate);
+      audioElement.addEventListener("ended", handleEnded);
     };
 
-    const handleTimeUpdate = () => {
-      setCurrentPosition(Math.ceil(audioElement.currentTime));
-    };
-
-    const handleEnded = () => {
-      setIsPlaying(false);
-      setCurrentPosition(0);
-      setCurrentAudioName("");
-    };
-
-    audioElement.addEventListener("loadedmetadata", handleLoadedMetadata);
-    audioElement.addEventListener("timeupdate", handleTimeUpdate);
-    audioElement.addEventListener("ended", handleEnded);
+    setupAudio();
 
     return () => {
-      audioElement.pause();
-      audioElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      audioElement.removeEventListener("timeupdate", handleTimeUpdate);
-      audioElement.removeEventListener("ended", handleEnded);
+      isMounted = false;
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      if (objectUrlRef.current) {
+        window.URL.revokeObjectURL(objectUrlRef.current);
+      }
     };
-  }, [audio.url, setCurrentAudioName]);
+  }, [audio.url, token, setCurrentAudioName]);
 
   useEffect(() => {
     if (currentAudioName !== audio.name && isPlaying) {

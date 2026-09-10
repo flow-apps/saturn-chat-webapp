@@ -341,22 +341,9 @@ export const Chat: React.FC = () => {
     cancelRecordAudio,
   } = useChatAudio(handleVoiceCallback);
 
-  const handleFileSelector = (): void => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.multiple = true;
-    input.onchange = (e: Event): void => {
-      const target = e.target as HTMLInputElement;
-      if (target.files) {
-        const selectedFiles: File[] = Array.from(target.files).map((file) => ({
-          file,
-          type: file.type.startsWith("image/") ? "image" : "document",
-        }));
-        setFiles((prev) => [...prev, ...selectedFiles]);
-      }
-    };
-    input.click();
-  };
+  const handleFileSelect = useCallback((newFiles: File[]) => {
+    setFiles((prev) => [...prev, ...newFiles]);
+  }, []);
 
   const fetchParticipantAndGroup = useCallback(
     async (isSilent = false): Promise<void> => {
@@ -620,7 +607,7 @@ export const Chat: React.FC = () => {
         onRecordAudioStart={(hasText) => recordAudio(hasText)}
         onRecordAudioStop={stopRecordAudioAndSubmit}
         onRecordAudioCancel={cancelRecordAudio}
-        onFileSelect={handleFileSelector}
+        onFileSelect={handleFileSelect}
         onRemoveFile={(idx) => setFiles(files.filter((_, i) => i !== idx))}
         onRemoveReplying={() => setReplyingMessage(undefined)}
         onTyping={() => handleSetTyping({ action: "ADD" })}

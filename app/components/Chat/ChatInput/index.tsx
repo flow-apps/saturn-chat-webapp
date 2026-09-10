@@ -45,7 +45,7 @@ interface ChatInputProps {
   onRecordAudioStart: (hasMessage: boolean) => void;
   onRecordAudioStop: () => void;
   onRecordAudioCancel?: () => void;
-  onFileSelect: () => void;
+  onFileSelect: (newFiles: File[]) => void;
   onOpenPollModal: () => void;
   onRemoveFile: (index: number) => void;
   onRemoveReplying: () => void;
@@ -188,7 +188,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleNativeFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      onFileSelect();
+      const selectedFiles = Array.from(e.target.files).map((file) => ({
+        file,
+        type: file.type.startsWith("image/") ? "image" : "document",
+      }));
+
+      onFileSelect(selectedFiles);
+
+      // Reseta o valor do input para permitir selecionar o mesmo arquivo novamente se necessário
+      e.target.value = "";
     }
   };
 

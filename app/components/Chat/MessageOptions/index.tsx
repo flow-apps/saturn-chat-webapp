@@ -22,9 +22,11 @@ import {
   Option,
   OptionText,
 } from "./styles";
+import { useTheme } from "styled-components";
 
 // Mapeamento dos nomes de ícones do Feather para componentes do Lucide
-const renderOptionIcon = (iconName?: string, color?: string) => {
+
+const renderOptionIcon = (iconName?: string, color = "#fff") => {
   if (!iconName) return null;
 
   const props = { size: 18, color };
@@ -64,7 +66,7 @@ const MessageOptions = ({
         action();
       }
     },
-    [close]
+    [close],
   );
 
   const canShowOptionChecker = useCallback(
@@ -92,7 +94,7 @@ const MessageOptions = ({
 
       return true;
     },
-    [group?.type, message?.author?.id, participant_role, user?.id]
+    [group?.type, message?.author?.id, participant_role, user?.id],
   );
 
   const visibleOptions = useMemo(() => {

@@ -17,6 +17,7 @@ export const useChatAudio = (
       recordingIntervalRef.current = null;
     }
   };
+  
 
   const recordAudio = async (hasMessage?: boolean) => {
     if (hasMessage || isRecording) return;

@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Play, Pause } from "lucide-react";
-import { secondsToTime } from "~/utils/format";
+import { millisToTime, secondsToTime } from "~/utils/format";
 import { AudioData } from "~/types/interfaces";
 import { useAudioPlayer } from "~/contexts/audioPlayer";
+import { useAuth } from "~/contexts/auth";
 
 import {
   Container,
@@ -16,50 +17,110 @@ import {
 } from "./styles";
 
 interface IAudioPlayer {
-  audio: AudioData;
+  audio: AudioData & { duration?: number };
 }
 
 const AudioPlayer = ({ audio }: IAudioPlayer) => {
   const { currentAudioName, setCurrentAudioName } = useAudioPlayer();
+  const { token } = useAuth();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPosition, setCurrentPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
+
+  // Normaliza a duração: se vier em milissegundos (> 1000), converte para segundos
+  const initialDurationInSeconds = audio.duration
+    ? audio.duration > 1000
+      ? audio.duration / 1000
+      : audio.duration
+    : 0;
+
+  const [duration, setDuration] = useState(initialDurationInSeconds);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const objectUrlRef = useRef<string>("");
 
-  // Inicializa a instância do áudio nativo do navegador
   useEffect(() => {
-    const audioElement = new Audio(audio.url);
-    audioRef.current = audioElement;
+    let isMounted = true;
 
-    const handleLoadedMetadata = () => {
-      setDuration(Math.ceil(audioElement.duration || 0));
+    const setupAudio = async () => {
+      if (!audio.url) return;
+
+      let finalAudioUrl = audio.url;
+
+      if (!audio.url.startsWith("blob:") && !audio.url.startsWith("data:")) {
+        if (!token) return;
+
+        try {
+          const response = await fetch(audio.url, {
+            headers: {
+              authorization: token,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Erro ao carregar áudio autenticado");
+          }
+
+          const rawBlob = await response.blob();
+          const mimeType = rawBlob.type || "audio/*";
+          const blob = new Blob([rawBlob], { type: mimeType });
+
+          finalAudioUrl = window.URL.createObjectURL(blob);
+          objectUrlRef.current = finalAudioUrl;
+        } catch (error) {
+          console.error("Erro no carregamento do áudio protegido:", error);
+          finalAudioUrl = audio.url;
+        }
+      }
+
+      if (!isMounted) {
+        if (objectUrlRef.current) {
+          window.URL.revokeObjectURL(objectUrlRef.current);
+        }
+        return;
+      }
+
+      const audioElement = new Audio(finalAudioUrl);
+      audioRef.current = audioElement;
+
+      const handleLoadedMetadata = () => {
+        if (
+          audioElement.duration &&
+          !isNaN(audioElement.duration) &&
+          audioElement.duration !== Infinity
+        ) {
+          setDuration(audioElement.duration);
+        }
+      };
+
+      const handleTimeUpdate = () => {
+        setCurrentPosition(audioElement.currentTime);
+      };
+
+      const handleEnded = () => {
+        setIsPlaying(false);
+        setCurrentPosition(0);
+        setCurrentAudioName("");
+      };
+
+      audioElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+      audioElement.addEventListener("timeupdate", handleTimeUpdate);
+      audioElement.addEventListener("ended", handleEnded);
     };
 
-    const handleTimeUpdate = () => {
-      setCurrentPosition(Math.ceil(audioElement.currentTime));
-    };
-
-    const handleEnded = () => {
-      setIsPlaying(false);
-      setCurrentPosition(0);
-      setCurrentAudioName("");
-    };
-
-    audioElement.addEventListener("loadedmetadata", handleLoadedMetadata);
-    audioElement.addEventListener("timeupdate", handleTimeUpdate);
-    audioElement.addEventListener("ended", handleEnded);
+    setupAudio();
 
     return () => {
-      audioElement.pause();
-      audioElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      audioElement.removeEventListener("timeupdate", handleTimeUpdate);
-      audioElement.removeEventListener("ended", handleEnded);
+      isMounted = false;
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      if (objectUrlRef.current) {
+        window.URL.revokeObjectURL(objectUrlRef.current);
+      }
     };
-  }, [audio.url, setCurrentAudioName]);
+  }, [audio.url, token, setCurrentAudioName]);
 
-  // Se outro áudio do chat começar a tocar, pausa este
   useEffect(() => {
     if (currentAudioName !== audio.name && isPlaying) {
       setIsPlaying(false);
@@ -86,20 +147,36 @@ const AudioPlayer = ({ audio }: IAudioPlayer) => {
     }
   }, [isPlaying, audio.name, setCurrentAudioName]);
 
-  const seekAudio = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const seekAudio = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newPos = Number(e.target.value);
     setCurrentPosition(newPos);
     if (audioRef.current) {
       audioRef.current.currentTime = newPos;
     }
-  };
+  }, []);
+
+  const displayTime =
+    isPlaying || currentPosition > 0 ? currentPosition : duration;
+
+  // Como o helper millisToTime espera milissegundos e secondsToTime espera segundos,
+  // multiplicamos por 1000 caso sua função `millisToTime` seja a padrão do projeto para formatação:
+  const formattedTime = millisToTime
+    ? millisToTime(displayTime * 1000)
+    : secondsToTime(displayTime);
 
   return (
     <Container>
       <AudioContainerWrapper>
         <AudioControllerContainer>
-          <AudioController onClick={playAndPause} title={isPlaying ? "Pausar" : "Reproduzir"}>
-            {isPlaying ? <Pause size={22} /> : <Play size={22} style={{ marginLeft: 2 }} />}
+          <AudioController
+            onClick={playAndPause}
+            title={isPlaying ? "Pausar" : "Reproduzir"}
+          >
+            {isPlaying ? (
+              <Pause size={22} />
+            ) : (
+              <Play size={22} style={{ marginLeft: 2 }} />
+            )}
           </AudioController>
 
           <SeekBarContainer>
@@ -107,6 +184,7 @@ const AudioPlayer = ({ audio }: IAudioPlayer) => {
               type="range"
               min={0}
               max={duration || 100}
+              step={0.1}
               value={currentPosition}
               onChange={seekAudio}
               style={{
@@ -116,11 +194,7 @@ const AudioPlayer = ({ audio }: IAudioPlayer) => {
           </SeekBarContainer>
 
           <AudioDurationContainer>
-            <AudioDuration>
-              {isPlaying || currentPosition > 0
-                ? secondsToTime(currentPosition)
-                : secondsToTime(duration)}
-            </AudioDuration>
+            <AudioDuration>{formattedTime}</AudioDuration>
           </AudioDurationContainer>
         </AudioControllerContainer>
       </AudioContainerWrapper>
