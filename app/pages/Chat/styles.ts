@@ -45,7 +45,7 @@ export const HeaderInfo = styled.div`
   h3 {
     font-size: 15px;
     font-weight: 600;
-    color: ${({ theme }) => theme.colors?.light_heading || "#ffffff"};
+    color: ${({ theme }) => "#ffffff"};
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -54,7 +54,7 @@ export const HeaderInfo = styled.div`
 
   span {
     font-size: 12px;
-    color: ${({ theme }) => theme.colors?.dark_heading || "#a1a1aa"};
+    color: #fff;
   }
 `;
 
@@ -67,14 +67,16 @@ export const HeaderActions = styled.div`
 export const IconButton = styled.button`
   background: transparent;
   border: none;
-  color: ${({ theme }) => theme.colors?.light_heading || "#a1a1aa"};
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 8px;
   border-radius: 50%;
   cursor: pointer;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 
   &:hover {
     color: #ffffff;

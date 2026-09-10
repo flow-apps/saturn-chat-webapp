@@ -25,6 +25,7 @@ import LoadingIndicator from "~/components/LoadingIndicator";
 import Alert from "~/components/Alert";
 import { PollModal } from "~/components/Chat/PollModal";
 import { ChatInput } from "~/components/Chat/ChatInput";
+import GroupConfigModal from "~/components/GroupConfigModal";
 
 import api from "~/services/api";
 import { useAuth } from "~/contexts/auth";
@@ -67,7 +68,7 @@ interface AlertConfigState {
 export const Chat: React.FC = () => {
   const { id = "" } = useParams<{ id: string }>();
 
-  // 1. Pegamos os parâmetros da URL (igual route.params no mobile)
+  // 1. Pegamos os parâmetros da URL
   const [searchParams] = useSearchParams();
   const friendNameParam = searchParams.get("name");
   const friendIdParam = searchParams.get("friendId");
@@ -95,6 +96,7 @@ export const Chat: React.FC = () => {
   } = useChatMessages(id);
 
   const [isPollModalVisible, setIsPollModalVisible] = useState<boolean>(false);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState<boolean>(false);
   const [files, setFiles] = useState<File[]>([]);
   const [, setFilesSizeUsed] = useState<number>(0);
   const [sendingFile, setSendingFile] = useState<boolean>(false);
@@ -513,7 +515,6 @@ export const Chat: React.FC = () => {
     }
   }, [currentGroupId, fetchParticipantAndGroup, group?.id]);
 
-  // Listener do WebSocket para atualizar mensagens em tempo real
   useEffect(() => {
     if (!connected || currentGroupId !== id) return;
 
@@ -583,17 +584,15 @@ export const Chat: React.FC = () => {
 
   const isDirect = group?.type === "DIRECT";
 
-  // 2. Fallback de Segurança: Se os parâmetros da URL faltarem (F5), achamos o amigo na lista de participantes
   const friendParticipant = isDirect
     ? participants.find((p: any) => {
         const participantUserId = p.user?.id || p.user_id;
-        return participantUserId !== user?.id; // Acha a pessoa que NÃO é você
+        return participantUserId !== user?.id;
       })
     : null;
 
   const otherUser = friendParticipant?.user || (friendParticipant as any);
 
-  // 3. Monta os dados do Header (Prioriza a URL, depois o Fallback, depois o Nome Genérico)
   const headerTitle =
     friendNameParam ||
     otherUser?.name ||
@@ -621,6 +620,12 @@ export const Chat: React.FC = () => {
         visible={isPollModalVisible}
         onClose={() => setIsPollModalVisible(false)}
         onSubmit={handleCreatePoll}
+      />
+
+      <GroupConfigModal
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+        groupId={id}
       />
 
       {/* HEADER DO CHAT */}
@@ -665,20 +670,13 @@ export const Chat: React.FC = () => {
               <Users size={20} />
             </IconButton>
           )}
-          <IconButton
-            title="Opções"
-            onClick={() =>
-              group.type === "GROUP"
-                ? navigate(`/group-config/${id}`)
-                : navigate(`/chat-config/${id}`)
-            }
-          >
+          <IconButton title="Opções" onClick={() => setIsConfigModalOpen(true)}>
             <MoreVertical size={20} />
           </IconButton>
         </HeaderActions>
       </ChatHeader>
 
-      {/* ÁREA DE MENSAGENS E SCROLL (ALINHAMENTO EM COLUMN-REVERSE) */}
+      {/* ÁREA DE MENSAGENS E SCROLL */}
       <MessagesScrollContainer ref={scrollContainerRef} onScroll={handleScroll}>
         <Typing typingUsers={typingUsers} />
 
