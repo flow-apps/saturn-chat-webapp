@@ -3,7 +3,7 @@ import Friends from "~/pages/Friends";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
+    { title: "Amigos" },
     { name: "description", content: "Welcome to React Router!" },
   ];
 }
