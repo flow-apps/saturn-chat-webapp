@@ -39,19 +39,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <ThemeControllerProvider>
-          <AuthProvider>
-            <PurchasesProvider>
-              <PremiumProvider>
-                <WebsocketProvider>
-                  <ChatProvider>
-                    <AudioPlayerProvider>{children}</AudioPlayerProvider>
-                  </ChatProvider>
-                </WebsocketProvider>
-              </PremiumProvider>
-            </PurchasesProvider>
-          </AuthProvider>
-        </ThemeControllerProvider>
+        {children}
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -60,7 +48,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <ThemeControllerProvider>
+      <AuthProvider>
+        <PurchasesProvider>
+          <PremiumProvider>
+            <WebsocketProvider>
+              <ChatProvider>
+                <AudioPlayerProvider>
+                  <Outlet />
+                </AudioPlayerProvider>
+              </ChatProvider>
+            </WebsocketProvider>
+          </PremiumProvider>
+        </PurchasesProvider>
+      </AuthProvider>
+    </ThemeControllerProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
