@@ -15,7 +15,6 @@ interface SelectedFileProps {
 }
 
 const SelectedFile = ({ onRemoveFile, file }: SelectedFileProps) => {
-  // Gera uma Object URL temporária para o navegador conseguir renderizar a prévia da imagem
   const imagePreviewUrl = useMemo(() => {
     if (file.type === "image" && file.file) {
       return URL.createObjectURL(file.file);
@@ -23,7 +22,6 @@ const SelectedFile = ({ onRemoveFile, file }: SelectedFileProps) => {
     return null;
   }, [file]);
 
-  // Libera a memória alocada pela URL temporária quando o componente for desmontado
   useEffect(() => {
     return () => {
       if (imagePreviewUrl) {

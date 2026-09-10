@@ -31,6 +31,7 @@ import ReplyingMessage from "~/components/Chat/ReplyingMessage";
 import InviteInMessage from "~/components/Chat/RichContent/InviteInMessage";
 import LinkPreview from "~/components/Chat/RichContent/LinkPreview";
 import { PollMessage } from "~/components/Chat/PollMessage";
+import ReportModal from "~/components/ReportModal";
 
 import {
   Container,
@@ -106,6 +107,7 @@ const Message = ({
   const [showLinkAlert, setShowLinkAlert] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [msgOptions, setMsgOptions] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [translatedContent, setTranslatedContent] = useState<string | null>(
     null,
   );
@@ -199,9 +201,9 @@ const Message = ({
     setMsgOptions(true);
   }, []);
 
-  const handleReportMessage = useCallback(async () => {
-    navigate(`/report?type=${ReportToType.MESSAGE}&message_id=${message.id}`);
-  }, [navigate, message.id]);
+  const handleReportMessage = useCallback(() => {
+    setIsReportModalOpen(true);
+  }, []);
 
   const optionsList = useMemo(() => {
     const isPoll = !!message.poll;
@@ -279,6 +281,13 @@ const Message = ({
         cancelButtonAction={closeLink}
         okButtonAction={() => openLink()}
         visible={showLinkAlert}
+      />
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        type={ReportToType.MESSAGE}
+        targetId={{ messageId: message.id }}
       />
 
       <MessageWrapper $isRight={isRight} onContextMenu={handleOpenMsgOptions}>

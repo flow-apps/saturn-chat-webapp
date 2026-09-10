@@ -25,17 +25,15 @@ const SelectedFiles = ({ files, onFileRemove }: SelectedFilesProps) => {
         transition={{ duration: 0.25, ease: "easeInOut" }}
         style={{ width: "100%", height: "100%" }}
       >
-        <div>
-          <AnimatePresence>
-            {files.map((item, index) => (
-              <SelectedFile
-                key={`${item.file?.name || "file"}-${index}`}
-                file={item}
-                onRemoveFile={() => onFileRemove(index)}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
+        <AnimatePresence>
+          {files.map((item, index) => (
+            <SelectedFile
+              key={`${item.file?.name || "file"}-${index}`}
+              file={item}
+              onRemoveFile={() => onFileRemove(index)}
+            />
+          ))}
+        </AnimatePresence>
       </motion.div>
     </FileContainer>
   );

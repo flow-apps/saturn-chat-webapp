@@ -2,18 +2,18 @@ import styled from "styled-components";
 
 export const FileContainer = styled.div`
   position: relative;
-  width: 80px;
-  height: 80px;
+  height: 1000px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 10px;
   background-color: ${(props) =>
-    (props.theme.colors?.dark_gray || "#4b5563") + "44"};
+    (props.theme.colors?.shape || "#4b5563") + "44"};
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #ffffff14;
   flex-shrink: 0;
+  flex: 1;
 `;
 
 export const ImageFile = styled.img`
