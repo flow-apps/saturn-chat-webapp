@@ -22,5 +22,7 @@ export default [
       }),
       route("chat/:id", "pages/Chat/index.tsx", { id: "friends-chat" }),
     ]),
+
+    route("settings", "routes/settings.tsx")
   ]),
 ] satisfies RouteConfig;
