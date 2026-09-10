@@ -4,7 +4,7 @@ export type ConversationType = "GROUP" | "DIRECT";
 
 interface ScreenshotBlockedParams {
   antiPrint: boolean;
-  conversationType: ConversationType;
+  conversationType?: ConversationType;
   settingsLoading: boolean;
 }
 

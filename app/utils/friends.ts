@@ -13,6 +13,8 @@ export const getFriendAvatar = (userID: string, friend: FriendData) => {
 };
 
 export const getFriendName = (userID: string, friend: FriendData) => {
+  console.log(friend);
+  
   return friend.received_by_id === userID
     ? friend.requested_by.name
     : friend.received_by.name;

@@ -1,4 +1,4 @@
-import { ISetting } from "@type/interfaces";
+import { ISetting } from "~/types/interfaces";
 
 export const getSettingValue = (settings: ISetting[], name: string) => {
   if (!settings?.length) return undefined;

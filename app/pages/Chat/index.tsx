@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useSearchParams } from "react-router";
 import {
   ArrowLeft,
   Phone,
@@ -50,6 +50,7 @@ import {
   ScrollToBottomButton,
   MessageItemWrapper,
 } from "./styles";
+import { getEffectiveSettingValue, getSettingValue } from "~/utils/settings";
 
 const MESSAGES_LIMIT_REQUEST = 50;
 
@@ -65,6 +66,12 @@ interface AlertConfigState {
 
 export const Chat: React.FC = () => {
   const { id = "" } = useParams<{ id: string }>();
+
+  // 1. Pegamos os parâmetros da URL (igual route.params no mobile)
+  const [searchParams] = useSearchParams();
+  const friendNameParam = searchParams.get("name");
+  const friendIdParam = searchParams.get("friendId");
+
   const navigate = useNavigate();
 
   const { user } = useAuth();
@@ -103,6 +110,7 @@ export const Chat: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [canSendMessage, setCanSendMessage] = useState<boolean>(true);
   const initialLoadDone = useRef<boolean>(false);
+  const currentJoinedRoomRef = useRef<string | null>(null);
 
   const [alertConfig, setAlertConfig] = useState<AlertConfigState>({
     visible: false,
@@ -110,7 +118,14 @@ export const Chat: React.FC = () => {
     content: "",
   });
 
-  const antiPrintSetting = group?.group_settings?.anti_print;
+  const antiPrintSetting =
+    group?.type === "DIRECT"
+      ? getEffectiveSettingValue(
+          participant?.participant_settings ?? [],
+          "anti_print",
+        )
+      : getSettingValue(group?.group_settings ?? [], "anti_print");
+
   const screenshotBlocked = isScreenshotBlocked({
     antiPrint: antiPrintSetting === true || antiPrintSetting === "true",
     conversationType: group?.type,
@@ -132,6 +147,9 @@ export const Chat: React.FC = () => {
     handleSetTyping,
     handleSendMessage,
     handleSendVoiceMessage,
+    onNewUserMessage,
+    onSendedUserMessage,
+    onDeleteUserMessage,
     connected,
     currentGroupId,
   } = useChat();
@@ -205,7 +223,9 @@ export const Chat: React.FC = () => {
       };
 
       setOldMessages((old: MessageData[]) =>
-        sortMessages(_.uniqBy([optimisticPollMessage, ...old], "id")),
+        sortMessages(
+          _.uniqBy([optimisticPollMessage, ...old], "id") as MessageData[],
+        ),
       );
 
       setTimeout(() => scrollToBottom(), 50);
@@ -274,7 +294,9 @@ export const Chat: React.FC = () => {
         });
 
         setOldMessages((old: MessageData[]) =>
-          sortMessages(_.uniqBy([optimisticAudio, ...old], "id")),
+          sortMessages(
+            _.uniqBy([optimisticAudio, ...old], "id") as MessageData[],
+          ),
         );
 
         setTimeout(() => scrollToBottom(), 50);
@@ -328,7 +350,7 @@ export const Chat: React.FC = () => {
 
   const handleVoiceCallback = useCallback(
     (duration: number, audioFile: globalThis.File) => {
-      handleSendVoice(duration, audioFile);
+      return handleSendVoice(duration, audioFile);
     },
     [handleSendVoice],
   );
@@ -366,7 +388,9 @@ export const Chat: React.FC = () => {
         if (mRes.data.messages.length < MESSAGES_LIMIT_REQUEST)
           setFetchedAll(true);
 
-        setOldMessages(sortMessages(_.uniqBy(mRes.data.messages, "id")));
+        setOldMessages(
+          sortMessages(_.uniqBy(mRes.data.messages, "id") as MessageData[]),
+        );
         setPage(1);
       } catch (error) {
         console.error("Chat: fetchParticipantAndGroup Error", error);
@@ -411,7 +435,7 @@ export const Chat: React.FC = () => {
     });
 
     setOldMessages((old: MessageData[]) =>
-      sortMessages(_.uniqBy([optimisticMsg, ...old], "id")),
+      sortMessages(_.uniqBy([optimisticMsg, ...old], "id") as MessageData[]),
     );
 
     setTimeout(() => scrollToBottom(), 50);
@@ -471,14 +495,76 @@ export const Chat: React.FC = () => {
   };
 
   useEffect(() => {
-    if (currentGroupId !== id) handleJoinRoom(id);
-  }, [id, currentGroupId, handleJoinRoom]);
+    if (!id || currentJoinedRoomRef.current === id) return;
+
+    currentJoinedRoomRef.current = id;
+
+    handleJoinRoom(id);
+    fetchParticipantAndGroup(false);
+
+    return () => {
+      currentJoinedRoomRef.current = null;
+    };
+  }, [id, handleJoinRoom, fetchParticipantAndGroup]);
 
   useEffect(() => {
     if (group?.id !== currentGroupId) {
       fetchParticipantAndGroup(false);
     }
   }, [currentGroupId, fetchParticipantAndGroup, group?.id]);
+
+  // Listener do WebSocket para atualizar mensagens em tempo real
+  useEffect(() => {
+    if (!connected || currentGroupId !== id) return;
+
+    const unsubscribeNewMessage = onNewUserMessage(
+      (newMessage: MessageData) => {
+        if (newMessage.group?.id === id || newMessage.group === id) {
+          setOldMessages((old: MessageData[]) => {
+            const exists = old.some(
+              (m) =>
+                m.id === newMessage.id ||
+                (newMessage.localReference &&
+                  m.localReference === newMessage.localReference),
+            );
+            if (exists) return old;
+            return sortMessages([...old, newMessage] as MessageData[]);
+          });
+          setTimeout(() => scrollToBottom(), 50);
+        }
+      },
+    );
+
+    const unsubscribeSended = onSendedUserMessage(({ msg, localReference }) => {
+      setOldMessages((old: MessageData[]) =>
+        old.map((m) =>
+          m.localReference === localReference ? { ...msg, sended: true } : m,
+        ),
+      );
+    });
+
+    const unsubscribeDelete = onDeleteUserMessage(({ id: messageId }) => {
+      setOldMessages((old: MessageData[]) =>
+        old.filter((m) => m.id !== messageId),
+      );
+    });
+
+    return () => {
+      unsubscribeNewMessage();
+      unsubscribeSended();
+      unsubscribeDelete();
+    };
+  }, [
+    connected,
+    currentGroupId,
+    id,
+    onNewUserMessage,
+    onSendedUserMessage,
+    onDeleteUserMessage,
+    sortMessages,
+    scrollToBottom,
+    setOldMessages,
+  ]);
 
   useEffect(() => {
     if (!participant || !group) return;
@@ -494,6 +580,33 @@ export const Chat: React.FC = () => {
   if (loading || !group?.id || !participant?.id) {
     return <Loading />;
   }
+
+  const isDirect = group?.type === "DIRECT";
+
+  // 2. Fallback de Segurança: Se os parâmetros da URL faltarem (F5), achamos o amigo na lista de participantes
+  const friendParticipant = isDirect
+    ? participants.find((p: any) => {
+        const participantUserId = p.user?.id || p.user_id;
+        return participantUserId !== user?.id; // Acha a pessoa que NÃO é você
+      })
+    : null;
+
+  const otherUser = friendParticipant?.user || (friendParticipant as any);
+
+  // 3. Monta os dados do Header (Prioriza a URL, depois o Fallback, depois o Nome Genérico)
+  const headerTitle =
+    friendNameParam ||
+    otherUser?.name ||
+    otherUser?.nickname ||
+    group?.name ||
+    "Conversa";
+
+  const headerAvatar =
+    (isDirect
+      ? otherUser?.avatar?.url || otherUser?.profile_avatar?.url
+      : group?.group_avatar?.url) || "/avatar-placeholder.jpg";
+
+  const targetFriendId = friendIdParam || otherUser?.id;
 
   return (
     <Container>
@@ -512,39 +625,54 @@ export const Chat: React.FC = () => {
 
       {/* HEADER DO CHAT */}
       <ChatHeader>
-        <IconButton title="Voltar" onClick={() => navigate("/")}>
+        <IconButton title="Voltar" onClick={() => navigate(-1)}>
           <ArrowLeft size={22} />
         </IconButton>
 
         <GroupAvatar
-          src={
-            group.group_avatar
-              ? group.group_avatar.url
-              : "/avatar-placeholder.jpg"
+          src={headerAvatar}
+          alt={headerTitle}
+          onClick={() =>
+            group.type === "GROUP"
+              ? navigate(`/group-info/${id}`)
+              : targetFriendId && navigate(`/user-profile/${targetFriendId}`)
           }
-          alt={group.name || "Avatar do Grupo"}
-          onClick={() => navigate(`/group-info/${id}`)}
           onError={(e) => {
             (e.target as HTMLImageElement).src = "/avatar-placeholder.jpg";
           }}
         />
 
-        <HeaderInfo onClick={() => navigate(`/group-info/${id}`)}>
-          <h3>{group.name}</h3>
-          <span>{participants.length} membros</span>
+        <HeaderInfo
+          onClick={() =>
+            group.type === "GROUP"
+              ? navigate(`/group-info/${id}`)
+              : targetFriendId && navigate(`/user-profile/${targetFriendId}`)
+          }
+        >
+          <h3>{headerTitle}</h3>
+          {group.type === "GROUP" && <span>{participants.length} membros</span>}
         </HeaderInfo>
 
         <HeaderActions>
           <IconButton title="Iniciar chamada">
             <Phone size={20} />
           </IconButton>
+          {group.type === "GROUP" && (
+            <IconButton
+              title="Membros"
+              onClick={() => navigate(`/participants/${id}`)}
+            >
+              <Users size={20} />
+            </IconButton>
+          )}
           <IconButton
-            title="Membros"
-            onClick={() => navigate(`/participants/${id}`)}
+            title="Opções"
+            onClick={() =>
+              group.type === "GROUP"
+                ? navigate(`/group-config/${id}`)
+                : navigate(`/chat-config/${id}`)
+            }
           >
-            <Users size={20} />
-          </IconButton>
-          <IconButton title="Opções">
             <MoreVertical size={20} />
           </IconButton>
         </HeaderActions>

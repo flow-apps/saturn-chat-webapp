@@ -83,8 +83,7 @@ export interface MessageData {
   created_at: string;
   author: UserData;
   author_id?: string;
-  // participant: ParticipantData;
-  participant: any;
+  participant: ParticipantsData;
   group: GroupData;
   reply_to?: MessageData;
   voice_message?: AudioData;
