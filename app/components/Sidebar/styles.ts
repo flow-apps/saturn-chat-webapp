@@ -58,11 +58,9 @@ export const IconButton = styled.div<{ $active?: boolean; $dashed?: boolean }>`
       ? `1.5px dashed ${props.theme?.colors?.light_heading || "#3f3f46"}`
       : "1.5px solid transparent"};
 
-  /* Fundo destacado em azul se estiver ativo */
   background-color: ${(props) =>
     props.$active ? props.theme?.colors?.primary || "#3b82f6" : "transparent"};
 
-  /* Cor do ícone */
   color: ${(props) =>
     props.$active
       ? "#ffffff"
@@ -71,8 +69,8 @@ export const IconButton = styled.div<{ $active?: boolean; $dashed?: boolean }>`
   &:hover {
     background-color: ${(props) =>
       props.$active
-        ? props.theme?.colors?.primary || "#3b82f6"
-        : "rgba(255, 255, 255, 0.05)"};
+        ? props.theme?.colors?.primary
+        : props.theme?.colors?.dark_gray};
     color: #ffffff;
     border-color: ${(props) =>
       props.$dashed && !props.$active ? "#ffffff" : "transparent"};
