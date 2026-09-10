@@ -72,7 +72,6 @@ const FilePreview = ({
 
   const { token } = useAuth();
 
-  // Tratamento universal de mídia (Blob local x URL remota autenticada)
   useEffect(() => {
     let isMounted = true;
     let createdUrl = "";
@@ -80,7 +79,6 @@ const FilePreview = ({
     const loadMedia = async () => {
       if (!url) return;
 
-      // Se a URL já for um Blob local (prévia de upload) ou Base64, usa diretamente
       if (url.startsWith("blob:") || url.startsWith("data:")) {
         if (isMounted) {
           setProtectedObjectUrl(url);
@@ -89,7 +87,6 @@ const FilePreview = ({
         return;
       }
 
-      // Se for URL remota, aguarda o token estar disponível antes de disparar o fetch
       if (!token) {
         return;
       }
@@ -109,7 +106,6 @@ const FilePreview = ({
 
         const rawBlob = await response.blob();
         
-        // Preserva e força o tipo MIME correto para suportar todos os formatos (png, webp, svg, jpg, etc.)
         const mimeType = rawBlob.type || (type === "image" ? "image/*" : undefined);
         const blob = new Blob([rawBlob], { type: mimeType });
         
@@ -327,7 +323,6 @@ const FilePreview = ({
         />
       )}
 
-      {/* MODAL DE PRÉ-VISUALIZAÇÃO */}
       {activeModal && (
         <Overlay onClick={() => setActiveModal(null)}>
           <ModalContainer onClick={(e) => e.stopPropagation()}>
@@ -361,7 +356,6 @@ const FilePreview = ({
         </Overlay>
       )}
 
-      {/* ALERT DE CONFIRMAÇÃO NO FIM DA ÁRVORE PARA FICAR SOBREPOSTO */}
       <CustomAlert
         title="Baixar Arquivo"
         content={`Deseja fazer o download do arquivo "${original_name}"?`}

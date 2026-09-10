@@ -36,10 +36,31 @@ const MessageMark = ({
   const rawText = message.message || "";
   const isLongMessage = rawText.length > MAX_MESSAGE_LENGTH;
 
+  const processMentionsToMarkdown = useCallback(
+    (text: string) => {
+      if (!text) return "";
+      
+      return text.replace(/@(\w+)/g, (match, nickname) => {
+        const participant = participants?.find(
+          (p) => p.user?.nickname === nickname
+        );
+
+        if (participant?.user?.id) {
+          return `[${match}](mention://${participant.user.id})`;
+        }
+        return match;
+      });
+    },
+    [participants]
+  );
+
   const displayedText = useMemo(() => {
-    if (!isLongMessage || isExpanded) return rawText;
-    return `${rawText.substring(0, MAX_MESSAGE_LENGTH)}... `;
-  }, [rawText, isLongMessage, isExpanded]);
+    let textToDisplay = rawText;
+    if (isLongMessage && !isExpanded) {
+      textToDisplay = `${rawText.substring(0, MAX_MESSAGE_LENGTH)}... `;
+    }
+    return processMentionsToMarkdown(textToDisplay);
+  }, [rawText, isLongMessage, isExpanded, processMentionsToMarkdown]);
 
   const copyLink = useCallback(async (e: React.MouseEvent, url: string) => {
     e.preventDefault();
@@ -50,62 +71,62 @@ const MessageMark = ({
     }
   }, []);
 
-  // Processa menções (@username) no texto antes de passar para o Markdown
-  const renderTextWithMentions = useCallback(
-    (text: string) => {
-      const mentionRegex = /(@\w+)/g;
-      if (!mentionRegex.test(text)) return text;
-
-      const parts = text.split(mentionRegex);
-      return parts.map((part, index) => {
-        if (part.startsWith("@")) {
-          const nickname = part.substring(1);
-          const participant = participants?.find(
-            (p) => p.user?.nickname === nickname
-          );
-
-          if (participant?.user?.id) {
-            return (
-              <MessageLink
-                key={`mention-${index}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/user-profile/${participant.user.id}`);
-                }}
-              >
-                {part}
-              </MessageLink>
-            );
-          }
-        }
-        return part;
-      });
-    },
-    [participants, navigate]
-  );
-
   return (
     <MessageMarkdownContainer $isRight={isRight}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
+          h1: ({ children }) => (
+            <MessageContent $isRight={isRight}>{children}</MessageContent>
+          ),
+          h2: ({ children }) => (
+            <MessageContent $isRight={isRight}>{children}</MessageContent>
+          ),
+          h3: ({ children }) => (
+            <MessageContent $isRight={isRight}>{children}</MessageContent>
+          ),
+          h4: ({ children }) => (
+            <MessageContent $isRight={isRight}>{children}</MessageContent>
+          ),
+          h5: ({ children }) => (
+            <MessageContent $isRight={isRight}>{children}</MessageContent>
+          ),
+          h6: ({ children }) => (
+            <MessageContent $isRight={isRight}>{children}</MessageContent>
+          ),
           p: ({ children }) => (
             <MessageContent $isRight={isRight}>{children}</MessageContent>
           ),
-          a: ({ href, children }) => (
-            <MessageLink
-              href={href}
-              onClick={(e) => {
-                e.preventDefault();
-                if (href) onPressLink(href);
-              }}
-              onContextMenu={(e) => {
-                if (href) copyLink(e, href);
-              }}
-            >
-              {children}
-            </MessageLink>
-          ),
+          a: ({ href, children }) => {
+            if (href?.startsWith("mention://")) {
+              const userId = href.replace("mention://", "");
+              return (
+                <MessageLink
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/user-profile/${userId}`);
+                  }}
+                >
+                  {children}
+                </MessageLink>
+              );
+            }
+
+            return (
+              <MessageLink
+                href={href}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (href) onPressLink(href);
+                }}
+                onContextMenu={(e) => {
+                  if (href) copyLink(e, href);
+                }}
+              >
+                {children}
+              </MessageLink>
+            );
+          },
           code: ({ className, children, ...props }) => {
             const isInline = !className;
             if (isInline) {
@@ -116,12 +137,6 @@ const MessageMark = ({
                 <MessageCodeBlockText>{children}</MessageCodeBlockText>
               </MessageCodeBlock>
             );
-          },
-          text: ({ children }) => {
-            if (typeof children === "string") {
-              return <>{renderTextWithMentions(children)}</>;
-            }
-            return <>{children}</>;
           },
         }}
       >

@@ -1,11 +1,9 @@
 import styled from "styled-components";
 
-// 1. Defina a interface para a prop $isRight
 interface MessageContainerProps {
   $isRight?: boolean;
 }
 
-// 2. Aplique a tipagem no styled component
 export const MessageMarkdownContainer = styled.div<MessageContainerProps>`
   width: 100%;
   max-width: 100%;
@@ -14,7 +12,6 @@ export const MessageMarkdownContainer = styled.div<MessageContainerProps>`
   word-break: break-word;
   color: ${(props) => props.theme.colors.black};
 
-  /* Aplica o ajuste rígido para listas que ultrapassam o container */
   ul,
   ol {
     margin: 4px 0;
@@ -78,8 +75,8 @@ export const MessageLink = styled.a`
 `;
 
 export const MessageCodeInline = styled.code`
-  background-color: rgba(0, 0, 0, 0.25);
-  color: #f43f5e;
+  background-color: #00000040;
+  color: ${props => props.theme.colors.dark_heading};
   padding: 2px 6px;
   border-radius: 4px;
   font-family: monospace;
