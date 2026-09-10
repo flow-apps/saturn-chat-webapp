@@ -20,7 +20,8 @@ export const Container = styled.div`
 `;
 
 export const FriendsContainer = styled.div`
-  width: 380px;
+  width: 450px;
+  min-width: 450px;
   height: 100%;
   background-color: ${(props) => props.theme.colors.shape};
   border-right: 1px solid ${(props) => props.theme.colors.shape || "#e1e1e1"};
@@ -42,15 +43,16 @@ export const FriendsSubtitle = styled.span`
 `;
 
 export const QuickAccessFriendsContainer = styled.div`
-  margin-bottom: 20px;
+  width: 100%;
+  padding: 10px 0;
+  margin-top: 10px;
+  flex-shrink: 0;
 `;
 
-export const QuickAccessTitle = styled.h3`
-  font-size: 13px;
-  color: ${(props) => props.theme.colors.light_heading};
-  margin-bottom: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+export const QuickAccessTitle = styled.h2`
+  font-size: 16px;
+  color: ${(props) => props.theme.colors.dark_heading};
+  margin-bottom: 15px;
 `;
 
 export const QuickAccessFriendsScroll = styled.div`
@@ -67,22 +69,20 @@ export const QuickAccessFriendsScroll = styled.div`
 `;
 
 export const QuickAccessFriend = styled(NavLink)`
-  width: 56px;
-  height: 56px;
-  border-radius: 28px;
-  margin-right: 12px;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: ${(props) => props.theme.colors.shape};
   flex-shrink: 0;
 
   img {
-    width: 100%;
-    height: 100%;
-    border-radius: 28px;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
     object-fit: cover;
+    aspect-ratio: 1 / 1;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover img {
+    transform: scale(1.05);
   }
 `;
 

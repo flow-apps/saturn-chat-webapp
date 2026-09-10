@@ -25,6 +25,7 @@ import {
   EmptyTitle,
   EmptySubtitle,
 } from "./styles";
+import Loading from "~/components/Loading";
 
 export const Friends: React.FC = () => {
   const [friends, setFriends] = useState<FriendData[]>([]);
@@ -64,7 +65,7 @@ export const Friends: React.FC = () => {
   };
 
   if (loading) {
-    return <p>Carregando...</p>;
+    return <Loading />;
   }
 
   return (
@@ -91,7 +92,7 @@ export const Friends: React.FC = () => {
                 return (
                   <QuickAccessFriend
                     key={item.id}
-                    to={`/chat/${item.chat.id}`}
+                    to={`/friends/chat/${item.chat.id}`}
                     title={friendName}
                   >
                     <img
@@ -128,10 +129,7 @@ export const Friends: React.FC = () => {
                     image={avatarUrl || "/avatar-placeholder.jpg"}
                     unreadMessages={item?.unreadMessagesAmount}
                     onClick={() => {
-                      const friendId = getFriendID(user?.id, item);
-                      navigate(
-                        `/friends/chat/${item.chat.id}?name=${encodeURIComponent(friendName)}&friendId=${friendId}`,
-                      );
+                      navigate(`/friends/chat/${item.chat.id}`);
                     }}
                   />
                 );

@@ -27,6 +27,7 @@ import {
   EmptySubtitle,
   EmptyLink,
 } from "./styles";
+import Loading from "~/components/Loading";
 
 export const Home: React.FC = () => {
   const [groups, setGroups] = useState<GroupData[]>([]);
@@ -73,7 +74,7 @@ export const Home: React.FC = () => {
   };
 
   if (loading) {
-    return <p>Carregando...</p>;
+    return <Loading />;
   }
 
   return (
