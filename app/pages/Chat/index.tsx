@@ -639,7 +639,10 @@ export const Chat: React.FC = () => {
 
       {/* HEADER DO CHAT */}
       <ChatHeader>
-        <IconButton title="Voltar" onClick={() => navigate(-1)}>
+        <IconButton
+          title="Voltar"
+          onClick={() => navigate(isDirect ? "/friends" : "/")}
+        >
           <ArrowLeft size={22} />
         </IconButton>
 
