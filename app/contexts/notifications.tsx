@@ -32,23 +32,20 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const platform = useMemo(() => "web", []);
   const language = useMemo(() => navigator.language || "pt-BR", []);
 
-  // 1. Inicializa o OneSignal e solicita permissão de cara ao abrir o app
   useEffect(() => {
     const initOneSignal = async () => {
       try {
         await OneSignal.init({
           appId: config.OneSignalAppID,
-          allowLocalhostAsSecureOrigin: true,
+          allowLocalhostAsSecureOrigin: import.meta.env.DEV,
         });
 
         setInitialized(true);
 
-        // Prompt imediato do navegador ao abrir o app
         if (OneSignal.Notifications.permission === false) {
           await OneSignal.Notifications.requestPermission();
         }
 
-        // Ouve atualizações de permissão/token (ex: usuário clicou em 'Permitir')
         OneSignal.User.PushSubscription.addEventListener(
           "change",
           async (event) => {
@@ -71,11 +68,14 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [initialized, signed, platform, language]);
 
-  // 2. Envia o token para o backend caso o usuário esteja autenticado
   const sendTokenToBackend = useCallback(async () => {
     if (!signed || !initialized) return;
 
     try {
+      if (Notification.permission !== "granted") {
+        return;
+      }
+
       const pushToken = OneSignal.User.PushSubscription.id;
 
       if (!pushToken) {
