@@ -27,18 +27,19 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [enabled, setEnabled] = useState<boolean>(true);
   const [initialized, setInitialized] = useState<boolean>(false);
-  const { signed } = useAuth();
+  const { signed, user } = useAuth(); // Assume que 'user' contém o ID do usuário (ex: user.id)
 
   const platform = useMemo(() => "web", []);
-  const language = useMemo(() => navigator.language || "pt-BR", []);
 
+  /*
+  // Desativado: Envio do token de notificação para o backend via API própria
   const registerTokenInBackend = useCallback(async (pushToken: string) => {
     if (!signed || !pushToken) return;
 
     try {
       const res = await api.post("/users/notify/register", {
         platform,
-        language,
+        language: navigator.language || "pt-BR",
         pushToken,
       });
 
@@ -48,8 +49,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.error("Erro ao registrar token no backend:", error);
     }
-  }, [signed, platform, language]);
+  }, [signed, platform]);
+  */
 
+  // 1. Inicializa o OneSignal SDK Web
   useEffect(() => {
     const initOneSignal = async () => {
       try {
@@ -64,6 +67,8 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           await OneSignal.User.PushSubscription.optIn();
         }
 
+        /*
+        // Desativado: Listener para registro no backend
         OneSignal.User.PushSubscription.addEventListener(
           "change",
           async (event) => {
@@ -79,6 +84,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         ) {
           await registerTokenInBackend(OneSignal.User.PushSubscription.id);
         }
+        */
       } catch (error) {
         console.error("Erro ao inicializar o OneSignal Web:", error);
       }
@@ -87,18 +93,42 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!initialized) {
       initOneSignal();
     }
-  }, [initialized, registerTokenInBackend]);
+  }, [initialized]);
 
+  // 2. Realiza o Login / Desvinculação (Logout) do Usuário no OneSignal via Frontend
   useEffect(() => {
-    if (signed && initialized) {
-      if (
-        OneSignal.User.PushSubscription.id &&
-        OneSignal.User.PushSubscription.optedIn
-      ) {
-        registerTokenInBackend(OneSignal.User.PushSubscription.id);
+    const handleOneSignalAuth = async () => {
+      if (!initialized) return;
+
+      if (signed && user?.id) {
+        try {
+          // Identifica e vincula a Subscription Web ao external_id do seu banco
+          await OneSignal.login(user.id);
+
+          /*
+          // Desativado: Registro manual do token no backend
+          if (
+            OneSignal.User.PushSubscription.id &&
+            OneSignal.User.PushSubscription.optedIn
+          ) {
+            registerTokenInBackend(OneSignal.User.PushSubscription.id);
+          }
+          */
+        } catch (error) {
+          console.error("Erro ao realizar login no OneSignal:", error);
+        }
+      } else if (!signed) {
+        try {
+          // Desvincula o usuário ao fazer logout da aplicação
+          await OneSignal.logout();
+        } catch (error) {
+          console.error("Erro ao realizar logout no OneSignal:", error);
+        }
       }
-    }
-  }, [signed, initialized, registerTokenInBackend]);
+    };
+
+    handleOneSignalAuth();
+  }, [signed, user?.id, initialized]);
 
   const toggleEnabledNotifications = async () => {
     if (!signed) return;
