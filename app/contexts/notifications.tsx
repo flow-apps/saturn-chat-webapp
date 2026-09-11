@@ -32,61 +32,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const platform = useMemo(() => "web", []);
   const language = useMemo(() => navigator.language || "pt-BR", []);
 
-  useEffect(() => {
-    const initOneSignal = async () => {
-      try {
-        await OneSignal.init({
-          appId: config.OneSignalAppID,
-          allowLocalhostAsSecureOrigin: import.meta.env.DEV,
-        });
-
-        setInitialized(true);
-
-        if (OneSignal.Notifications.permission === false) {
-          await OneSignal.Notifications.requestPermission();
-        }
-
-        OneSignal.User.PushSubscription.addEventListener(
-          "change",
-          async (event) => {
-            if (event.current.id && signed) {
-              await api.post("/users/notify/register", {
-                platform,
-                language,
-                pushToken: event.current.id,
-              });
-            }
-          },
-        );
-      } catch (error) {
-        console.error("Erro ao inicializar o OneSignal Web:", error);
-      }
-    };
-
-    if (!initialized) {
-      initOneSignal();
-    }
-  }, [initialized, signed, platform, language]);
-
-  const sendTokenToBackend = useCallback(async () => {
-    if (!signed || !initialized) return;
+  const registerTokenInBackend = useCallback(async (pushToken: string) => {
+    if (!signed || !pushToken) return;
 
     try {
-      if (Notification.permission !== "granted") {
-        console.warn(
-          "Permissão de notificação ainda não foi concedida pelo usuário.",
-        );
-        return;
-      }
-
-      const pushToken = OneSignal.User.PushSubscription.id;
-      const isOptedIn = OneSignal.User.PushSubscription.optedIn;
-
-      if (!pushToken || !isOptedIn) {
-        console.warn("Subscription do OneSignal ainda não está ativa/optedIn.");
-        return;
-      }
-
       const res = await api.post("/users/notify/register", {
         platform,
         language,
@@ -97,15 +46,59 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         setEnabled(!!res.data.send_notification);
       }
     } catch (error) {
-      console.error("Erro ao enviar token de notificação ao backend:", error);
+      console.error("Erro ao registrar token no backend:", error);
     }
-  }, [signed, initialized, platform, language]);
+  }, [signed, platform, language]);
+
+  useEffect(() => {
+    const initOneSignal = async () => {
+      try {
+        await OneSignal.init({
+          appId: config.OneSignalAppID,
+          allowLocalhostAsSecureOrigin: true,
+        });
+
+        setInitialized(true);
+
+        if (Notification.permission === "granted") {
+          await OneSignal.User.PushSubscription.optIn();
+        }
+
+        OneSignal.User.PushSubscription.addEventListener(
+          "change",
+          async (event) => {
+            if (event.current.id && event.current.optedIn) {
+              await registerTokenInBackend(event.current.id);
+            }
+          },
+        );
+
+        if (
+          OneSignal.User.PushSubscription.id &&
+          OneSignal.User.PushSubscription.optedIn
+        ) {
+          await registerTokenInBackend(OneSignal.User.PushSubscription.id);
+        }
+      } catch (error) {
+        console.error("Erro ao inicializar o OneSignal Web:", error);
+      }
+    };
+
+    if (!initialized) {
+      initOneSignal();
+    }
+  }, [initialized, registerTokenInBackend]);
 
   useEffect(() => {
     if (signed && initialized) {
-      sendTokenToBackend();
+      if (
+        OneSignal.User.PushSubscription.id &&
+        OneSignal.User.PushSubscription.optedIn
+      ) {
+        registerTokenInBackend(OneSignal.User.PushSubscription.id);
+      }
     }
-  }, [signed, initialized, sendTokenToBackend]);
+  }, [signed, initialized, registerTokenInBackend]);
 
   const toggleEnabledNotifications = async () => {
     if (!signed) return;
@@ -126,6 +119,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const requestPermission = async () => {
     try {
       await OneSignal.Notifications.requestPermission();
+      await OneSignal.User.PushSubscription.optIn();
     } catch (error) {
       console.error("Erro ao solicitar permissão no navegador:", error);
     }
