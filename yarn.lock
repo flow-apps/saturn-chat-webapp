@@ -2190,6 +2190,11 @@ react-markdown@^10.1.0:
     unist-util-visit "^5.0.0"
     vfile "^6.0.0"
 
+react-onesignal@^3.5.6:
+  version "3.5.6"
+  resolved "https://registry.yarnpkg.com/react-onesignal/-/react-onesignal-3.5.6.tgz#78023bb2054eaeea636b0063a8de1ba05b7a4745"
+  integrity sha512-QlvuWilG8n86GMaYG7a7DSzyLrZIsbM6PFW2XrDI68AYV50axUF5RCzWIqEGfNc1COa/QiDlz7wGkpuiKBayoQ==
+
 react-refresh@^0.18.0:
   version "0.18.0"
   resolved "https://registry.yarnpkg.com/react-refresh/-/react-refresh-0.18.0.tgz#2dce97f4fe932a4d8142fa1630e475c1729c8062"

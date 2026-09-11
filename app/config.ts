@@ -5,6 +5,7 @@ const configs = {
   SATURN_CHAT_DOMAINS: ["saturn-chat.vercel.app", "saturnchat.com.br"],
   WEBSITE_URL: "https://saturnchat.com.br",
   OFICIAL_GROUP_ID: "d10dfadb-08d1-4eb8-8a82-3a7b379604d3",
+  OneSignalAppID: "d2093d10-620b-48d4-be86-c198311f9951",
   ICE_SERVERS_CONFIG: {
     iceServers: [
       { urls: "stun:stun.l.google.com:19302" },

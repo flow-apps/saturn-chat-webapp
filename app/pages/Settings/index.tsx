@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router";
 import {
   Star,
@@ -22,6 +22,7 @@ import {
 import { useAuth } from "~/contexts/auth";
 import { useThemeController } from "~/contexts/theme";
 import { usePremium } from "~/contexts/premium";
+import { useNotifications } from "~/contexts/notifications";
 import { usePersistedState } from "~/hooks/usePersistedState";
 import config from "~/config";
 
@@ -53,8 +54,8 @@ export const Settings: React.FC = () => {
   const { signOut } = useAuth();
   const { toggleTheme, currentThemeName } = useThemeController();
   const { isPremium } = usePremium();
+  const { enabled, toggleEnabledNotifications } = useNotifications();
 
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [useDevApi, setUseDevApi] = usePersistedState<boolean>(
     API_PREFERENCE_KEY,
     false,
@@ -145,17 +146,13 @@ export const Settings: React.FC = () => {
 
               <ConfigItem as="div">
                 <ConfigTitle>
-                  {notificationsEnabled ? (
-                    <Bell size={18} />
-                  ) : (
-                    <BellOff size={18} />
-                  )}
+                  {enabled ? <Bell size={18} /> : <BellOff size={18} />}
                   Notificações
                 </ConfigTitle>
                 <Switch
                   type="checkbox"
-                  checked={notificationsEnabled}
-                  onChange={(e) => setNotificationsEnabled(e.target.checked)}
+                  checked={enabled}
+                  onChange={toggleEnabledNotifications}
                 />
               </ConfigItem>
             </ConfigsList>

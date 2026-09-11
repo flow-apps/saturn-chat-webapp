@@ -15,6 +15,7 @@ import { AudioPlayerProvider } from "./contexts/audioPlayer";
 import { PurchasesProvider } from "./contexts/purchases";
 import { PremiumProvider } from "./contexts/premium";
 import { ChatProvider } from "./contexts/chat";
+import { NotificationsProvider } from "./contexts/notifications";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -51,17 +52,19 @@ export default function App() {
   return (
     <ThemeControllerProvider>
       <AuthProvider>
-        <PurchasesProvider>
-          <PremiumProvider>
-            <WebsocketProvider>
-              <ChatProvider>
-                <AudioPlayerProvider>
-                  <Outlet />
-                </AudioPlayerProvider>
-              </ChatProvider>
-            </WebsocketProvider>
-          </PremiumProvider>
-        </PurchasesProvider>
+        <NotificationsProvider>
+          <PurchasesProvider>
+            <PremiumProvider>
+              <WebsocketProvider>
+                <ChatProvider>
+                  <AudioPlayerProvider>
+                    <Outlet />
+                  </AudioPlayerProvider>
+                </ChatProvider>
+              </WebsocketProvider>
+            </PremiumProvider>
+          </PurchasesProvider>
+        </NotificationsProvider>
       </AuthProvider>
     </ThemeControllerProvider>
   );

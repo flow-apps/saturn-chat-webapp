@@ -5,7 +5,7 @@ import configs from "~/config";
 
 const TOKEN_COOKIE_KEY = "@SaturnChat:token";
 
-const isProduction = import.meta.env.PROD;
+export const isProduction = import.meta.env.PROD;
 
 const api = axios.create({
   baseURL: isProduction ? configs.PROD_API_URL : configs.DEV_API_URL,
