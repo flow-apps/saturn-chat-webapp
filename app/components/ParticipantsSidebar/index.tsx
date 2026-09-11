@@ -10,7 +10,6 @@ import {
   Slash,
 } from "lucide-react";
 import moment from "moment";
-import "moment/locale/pt-br";
 
 import api from "~/services/api";
 import { ParticipantsData } from "~/types/interfaces";
@@ -174,7 +173,7 @@ export const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
 
   // NAVEGAÇÃO / AÇÕES
   const handleGoUserProfile = (userId: string) => {
-    navigate(`/user-profile/${userId}`);
+    navigate(`/user/${userId}`);
     handleClose();
   };
 

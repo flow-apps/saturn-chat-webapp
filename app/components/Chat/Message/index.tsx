@@ -148,7 +148,7 @@ const Message = ({
 
   const handleGoParticipant = useCallback(() => {
     if (message.participant?.id) {
-      navigate(`/participant/${message.participant.id}`);
+      navigate(`/user/${message.author_id}`);
     }
   }, [navigate, message.participant]);
 

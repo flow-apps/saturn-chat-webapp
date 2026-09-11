@@ -71,7 +71,7 @@ export const Sidebar: React.FC = () => {
           )}
         </NavLink>
 
-        <NavLink to="/profile">
+        <NavLink to={`/user/${user?.id}`}>
           <AvatarContainer title={user?.name || "Perfil"}>
             <AvatarImage
               src={user?.avatar ? user.avatar.url : "/avatar-placeholder.jpg"}
