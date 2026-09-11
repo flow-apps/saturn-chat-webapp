@@ -10,6 +10,7 @@ import {
   Slash,
 } from "lucide-react";
 import moment from "moment";
+import "moment/locale/pt-br";
 
 import api from "~/services/api";
 import { ParticipantsData } from "~/types/interfaces";
@@ -19,6 +20,7 @@ import { usePremium } from "~/contexts/premium";
 import Loading from "~/components/Loading";
 import PremiumName from "~/components/PremiumName";
 import ChangeRoleModal from "~/components/ChangeRoleModal";
+import PunishParticipantModal from "~/components/PunishParticipantModal";
 
 import {
   Overlay,
@@ -45,7 +47,7 @@ import {
   OptionText,
 } from "./styles";
 
-moment.locale("pt-BR");
+moment.locale("pt-br");
 
 interface ParticipantsSidebarProps {
   isOpen: boolean;
@@ -81,14 +83,19 @@ export const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
   const [loadedAll, setLoadedAll] = useState(false);
   const [fetching, setFetching] = useState(false);
 
-  // Estado do Participante Selecionado e Modais
+  // Estados dos Modais e Participante Selecionado
   const [selectedParticipant, setSelectedParticipant] =
     useState<ParticipantsData | null>(null);
   const [isChangeRoleModalOpen, setIsChangeRoleModalOpen] =
     useState<boolean>(false);
+  const [punishModalState, setPunishModalState] = useState<{
+    isOpen: boolean;
+    type: "kick" | "ban";
+  }>({ isOpen: false, type: "kick" });
+
   const [myRole, setMyRole] = useState<ParticipantRoles | "">("");
 
-  // Carga Inicial dos dados
+  // Carga Inicial
   const fetchInitialData = useCallback(async () => {
     if (!groupId) return;
 
@@ -161,6 +168,7 @@ export const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
   const handleClose = () => {
     setSelectedParticipant(null);
     setIsChangeRoleModalOpen(false);
+    setPunishModalState({ isOpen: false, type: "kick" });
     onClose();
   };
 
@@ -170,15 +178,12 @@ export const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
     handleClose();
   };
 
-  const handleGoPunishParticipant = (type: "kick" | "ban") => {
-    if (!selectedParticipant) return;
-    navigate(
-      `/punish-participant/${type}/${groupId}/${selectedParticipant.id}`,
-    );
-    handleClose();
+  const handleOpenPunishModal = (type: "kick" | "ban") => {
+    setPunishModalState({ isOpen: true, type });
   };
 
-  const handleRoleChangedSuccess = () => {
+  const handleActionSuccess = () => {
+    setSelectedParticipant(null);
     fetchInitialData();
   };
 
@@ -278,7 +283,7 @@ export const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
                     <>
                       <OptionItem
                         $danger
-                        onClick={() => handleGoPunishParticipant("kick")}
+                        onClick={() => handleOpenPunishModal("kick")}
                       >
                         <UserX size={18} />
                         <OptionText $danger>Expulsar do Grupo</OptionText>
@@ -286,7 +291,7 @@ export const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
 
                       <OptionItem
                         $danger
-                        onClick={() => handleGoPunishParticipant("ban")}
+                        onClick={() => handleOpenPunishModal("ban")}
                       >
                         <Slash size={18} />
                         <OptionText $danger>Banir do Grupo</OptionText>
@@ -371,7 +376,18 @@ export const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
         isOpen={isChangeRoleModalOpen}
         onClose={() => setIsChangeRoleModalOpen(false)}
         participant={selectedParticipant}
-        onSuccess={handleRoleChangedSuccess}
+        onSuccess={handleActionSuccess}
+      />
+
+      {/* MODAL PARA PUNIR (EXPULSAR / BANIR) */}
+      <PunishParticipantModal
+        isOpen={punishModalState.isOpen}
+        onClose={() =>
+          setPunishModalState((prev) => ({ ...prev, isOpen: false }))
+        }
+        type={punishModalState.type}
+        participant={selectedParticipant}
+        onSuccess={handleActionSuccess}
       />
     </>
   );
