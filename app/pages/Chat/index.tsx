@@ -523,7 +523,7 @@ export const Chat: React.FC = () => {
 
     const unsubscribeNewMessage = onNewUserMessage(
       (newMessage: MessageData) => {
-        if (newMessage.group?.id === id || newMessage.group === id) {
+        if (newMessage.group?.id === id || newMessage.group.id === id) {
           setOldMessages((old: MessageData[]) => {
             const exists = old.some(
               (m) =>
@@ -576,7 +576,7 @@ export const Chat: React.FC = () => {
       return setCanSendMessage(true);
     const pRoleIdx = ordernedRolesArray.indexOf(participant.role);
     const minRoleIdx = ordernedRolesArray.indexOf(
-      group.group_settings?.minimum_role_for_send_message,
+      getSettingValue(group.group_settings, "minimum_role_for_send_message"),
     );
     setCanSendMessage(pRoleIdx >= minRoleIdx);
   }, [participant, group]);
@@ -649,7 +649,7 @@ export const Chat: React.FC = () => {
           onClick={() =>
             group.type === "GROUP"
               ? navigate(`/group-info/${id}`)
-              : targetFriendId && navigate(`/user-profile/${targetFriendId}`)
+              : targetFriendId && navigate(`/user/${targetFriendId}`)
           }
           onError={(e) => {
             (e.target as HTMLImageElement).src = "/avatar-placeholder.jpg";
@@ -660,7 +660,7 @@ export const Chat: React.FC = () => {
           onClick={() =>
             group.type === "GROUP"
               ? navigate(`/group-info/${id}`)
-              : targetFriendId && navigate(`/user-profile/${targetFriendId}`)
+              : targetFriendId && navigate(`/user/${targetFriendId}`)
           }
         >
           <h3>{headerTitle}</h3>
