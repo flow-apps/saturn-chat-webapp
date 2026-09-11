@@ -73,12 +73,17 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       if (Notification.permission !== "granted") {
+        console.warn(
+          "Permissão de notificação ainda não foi concedida pelo usuário.",
+        );
         return;
       }
 
       const pushToken = OneSignal.User.PushSubscription.id;
+      const isOptedIn = OneSignal.User.PushSubscription.optedIn;
 
-      if (!pushToken) {
+      if (!pushToken || !isOptedIn) {
+        console.warn("Subscription do OneSignal ainda não está ativa/optedIn.");
         return;
       }
 
