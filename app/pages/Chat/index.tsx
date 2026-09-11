@@ -26,6 +26,7 @@ import Alert from "~/components/Alert";
 import { PollModal } from "~/components/Chat/PollModal";
 import { ChatInput } from "~/components/Chat/ChatInput";
 import GroupConfigModal from "~/components/GroupConfigModal";
+import ParticipantsSidebar from "~/components/ParticipantsSidebar";
 
 import api from "~/services/api";
 import { useAuth } from "~/contexts/auth";
@@ -97,6 +98,8 @@ export const Chat: React.FC = () => {
 
   const [isPollModalVisible, setIsPollModalVisible] = useState<boolean>(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState<boolean>(false);
+  const [isParticipantsSidebarOpen, setIsParticipantsSidebarOpen] =
+    useState<boolean>(false);
   const [files, setFiles] = useState<File[]>([]);
   const [, setFilesSizeUsed] = useState<number>(0);
   const [sendingFile, setSendingFile] = useState<boolean>(false);
@@ -628,6 +631,12 @@ export const Chat: React.FC = () => {
         groupId={id}
       />
 
+      <ParticipantsSidebar
+        isOpen={isParticipantsSidebarOpen}
+        onClose={() => setIsParticipantsSidebarOpen(false)}
+        groupId={id}
+      />
+
       {/* HEADER DO CHAT */}
       <ChatHeader>
         <IconButton title="Voltar" onClick={() => navigate(-1)}>
@@ -665,7 +674,7 @@ export const Chat: React.FC = () => {
           {group.type === "GROUP" && (
             <IconButton
               title="Membros"
-              onClick={() => navigate(`/participants/${id}`)}
+              onClick={() => setIsParticipantsSidebarOpen(true)}
             >
               <Users size={20} />
             </IconButton>
