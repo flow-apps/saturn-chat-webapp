@@ -49,7 +49,7 @@ export const CallStatusProvider: React.FC<{ children: React.ReactNode }> = ({
   const onEndCall = useCallback(() => {
     setActiveCallRoomId(null);
     setIsVideoEnabled(false);
-  }, []);
+  }, [activeCallRoomId, isVideoEnabled]);
 
   const session = useCallRoom(activeCallRoomId, onEndCall);
 
@@ -85,7 +85,8 @@ export const CallStatusProvider: React.FC<{ children: React.ReactNode }> = ({
       setActiveCallRoom,
       clearActiveCallRoom,
       localStream: (session?.localStream as MediaStream) || null,
-      remoteStreams: (session?.remoteStreams as { [socketId: string]: MediaStream }) || {},
+      remoteStreams:
+        (session?.remoteStreams as { [socketId: string]: MediaStream }) || {},
       participants: session?.participants || [],
       remoteVideoEnabled: session?.remoteVideoEnabled || {},
       remoteAudioMuted: session?.remoteAudioMuted || {},
