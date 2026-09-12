@@ -32,6 +32,7 @@ import api from "~/services/api";
 import { useAuth } from "~/contexts/auth";
 import { useWebsocket } from "~/contexts/websocket";
 import { useChat } from "~/contexts/chat";
+import { useCallStatus } from "~/contexts/callStatus";
 import { useChatMessages } from "~/hooks/useChatMessages";
 import { useChatAudio } from "~/hooks/useChatAudio";
 import { usePersistedState } from "~/hooks/usePersistedState";
@@ -78,6 +79,7 @@ export const Chat: React.FC = () => {
 
   const { user } = useAuth();
   const { socket } = useWebsocket();
+  const { setActiveCallRoom } = useCallStatus();
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState<boolean>(false);
@@ -158,6 +160,12 @@ export const Chat: React.FC = () => {
     connected,
     currentGroupId,
   } = useChat();
+
+  const handleStartCall = useCallback(() => {
+    if (!id) return;
+    setActiveCallRoom(id);
+    navigate(`/call/${id}`);
+  }, [id, navigate, setActiveCallRoom]);
 
   const scrollToBottom = useCallback((): void => {
     if (scrollContainerRef.current) {
@@ -671,7 +679,7 @@ export const Chat: React.FC = () => {
         </HeaderInfo>
 
         <HeaderActions>
-          <IconButton title="Iniciar chamada">
+          <IconButton title="Iniciar chamada" onClick={handleStartCall}>
             <Phone size={20} />
           </IconButton>
           {group.type === "GROUP" && (

@@ -8,7 +8,7 @@ const TOKEN_COOKIE_KEY = "@SaturnChat:token";
 export const isProduction = import.meta.env.PROD;
 
 const api = axios.create({
-  baseURL: isProduction ? configs.PROD_API_URL : configs.DEV_API_URL,
+  baseURL: isProduction ? configs.PROD_API_URL : configs.PROD_API_URL,
 });
 
 api.interceptors.request.use((config) => {

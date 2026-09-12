@@ -16,6 +16,8 @@ import { PurchasesProvider } from "./contexts/purchases";
 import { PremiumProvider } from "./contexts/premium";
 import { ChatProvider } from "./contexts/chat";
 import { NotificationsProvider } from "./contexts/notifications";
+import { CallStatusProvider } from "./contexts/callStatus";
+import CallFloatingButton from "./components/CallFloatingButton";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -58,7 +60,10 @@ export default function App() {
               <WebsocketProvider>
                 <ChatProvider>
                   <AudioPlayerProvider>
-                    <Outlet />
+                    <CallStatusProvider>
+                      <CallFloatingButton />
+                      <Outlet />
+                    </CallStatusProvider>
                   </AudioPlayerProvider>
                 </ChatProvider>
               </WebsocketProvider>

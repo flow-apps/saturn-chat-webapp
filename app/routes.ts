@@ -25,5 +25,6 @@ export default [
 
     route("settings", "routes/settings.tsx"),
     route("user/:id", "routes/userProfile.tsx"),
+    route("call/:groupId", "routes/call.tsx"),
   ]),
 ] satisfies RouteConfig;
