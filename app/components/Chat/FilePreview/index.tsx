@@ -128,34 +128,45 @@ const FilePreview = ({
         return;
       }
 
-      if (!token) {
-        return;
-      }
+      if (!token) return;
 
       setLoadingMedia(true);
 
       try {
-        // Envia Authorization com o A maiúsculo padrão HTTP
+        const authToken = token.startsWith("Bearer ")
+          ? token
+          : `Bearer ${token}`;
+
         const response = await fetch(url, {
           headers: {
-            authorization: token,
+            authorization: authToken,
           },
         });
 
         if (!response.ok) {
-          throw new Error("Erro ao carregar arquivo autenticado");
+          throw new Error(`HTTP Error ${response.status} ao carregar mídia`);
         }
 
-        const rawBlob = await response.blob();
+        const buffer = await response.arrayBuffer();
 
-        // Garante a presença do MIME Type exato para liberar o player do navegador
-        const exactMimeType = inferMimeType(
-          original_name || name,
-          type,
-          rawBlob.type,
-        );
+        let mimeType = response.headers.get("content-type") || "";
+        if (!mimeType || mimeType === "application/octet-stream") {
+          const ext = (original_name || name)?.split(".").pop()?.toLowerCase();
+          if (
+            type === "video" ||
+            ext === "mp4" ||
+            ext === "mov" ||
+            ext === "webm"
+          ) {
+            mimeType = "video/mp4";
+          } else if (type === "audio" || ext === "m4a" || ext === "mp3") {
+            mimeType = "audio/mp4";
+          } else {
+            mimeType = "image/jpeg";
+          }
+        }
 
-        const blob = new Blob([rawBlob], { type: exactMimeType });
+        const blob = new Blob([buffer], { type: mimeType });
         createdUrl = window.URL.createObjectURL(blob);
 
         if (isMounted) {
@@ -164,7 +175,7 @@ const FilePreview = ({
       } catch (error) {
         console.error("Erro no carregamento de mídia autenticada:", error);
         if (isMounted) {
-          setProtectedObjectUrl(url);
+          setProtectedObjectUrl("");
         }
       } finally {
         if (isMounted) {
