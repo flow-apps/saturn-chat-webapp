@@ -55,6 +55,47 @@ interface IFilePreviewProps {
 
 type ModalType = "image" | "video" | "pdf" | null;
 
+// Helper para garantir o MIME Type correto para a tag <video> ou <audio>
+const inferMimeType = (
+  filename: string,
+  fileType: string,
+  blobType: string,
+) => {
+  if (blobType && blobType !== "application/octet-stream") {
+    return blobType;
+  }
+
+  const ext = filename?.split(".").pop()?.toLowerCase();
+
+  if (
+    fileType === "video" ||
+    ext === "mp4" ||
+    ext === "mov" ||
+    ext === "webm"
+  ) {
+    return `video/${ext === "mov" ? "quicktime" : ext || "mp4"}`;
+  }
+
+  if (fileType === "audio" || ext === "m4a" || ext === "mp3" || ext === "ogg") {
+    return `audio/${ext === "m4a" ? "mp4" : ext || "mpeg"}`;
+  }
+
+  if (
+    fileType === "image" ||
+    ext === "jpg" ||
+    ext === "jpeg" ||
+    ext === "png"
+  ) {
+    return `image/${ext === "jpg" ? "jpeg" : ext || "jpeg"}`;
+  }
+
+  if (ext === "pdf") {
+    return "application/pdf";
+  }
+
+  return "application/octet-stream";
+};
+
 const FilePreview = ({
   name,
   original_name,
@@ -94,6 +135,7 @@ const FilePreview = ({
       setLoadingMedia(true);
 
       try {
+        // Envia Authorization com o A maiúsculo padrão HTTP
         const response = await fetch(url, {
           headers: {
             authorization: token,
@@ -105,10 +147,15 @@ const FilePreview = ({
         }
 
         const rawBlob = await response.blob();
-        
-        const mimeType = rawBlob.type || (type === "image" ? "image/*" : undefined);
-        const blob = new Blob([rawBlob], { type: mimeType });
-        
+
+        // Garante a presença do MIME Type exato para liberar o player do navegador
+        const exactMimeType = inferMimeType(
+          original_name || name,
+          type,
+          rawBlob.type,
+        );
+
+        const blob = new Blob([rawBlob], { type: exactMimeType });
         createdUrl = window.URL.createObjectURL(blob);
 
         if (isMounted) {
@@ -117,7 +164,7 @@ const FilePreview = ({
       } catch (error) {
         console.error("Erro no carregamento de mídia autenticada:", error);
         if (isMounted) {
-          setProtectedObjectUrl(url); // Fallback usando a URL original
+          setProtectedObjectUrl(url);
         }
       } finally {
         if (isMounted) {
@@ -128,16 +175,14 @@ const FilePreview = ({
 
     loadMedia();
 
-    // Limpeza da memória ao desmontar ou trocar de URL
     return () => {
       isMounted = false;
       if (createdUrl) {
         window.URL.revokeObjectURL(createdUrl);
       }
     };
-  }, [url, token, type]);
+  }, [url, token, type, name, original_name]);
 
-  // Fechar o modal pressionando a tecla 'Escape'
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && activeModal) {
@@ -173,8 +218,6 @@ const FilePreview = ({
         return;
       }
 
-      
-
       const response = await fetch(url, {
         headers: {
           authorization: token,
@@ -186,7 +229,13 @@ const FilePreview = ({
       }
 
       const rawBlob = await response.blob();
-      const blob = new Blob([rawBlob], { type: rawBlob.type });
+      const exactMimeType = inferMimeType(
+        original_name || name,
+        type,
+        rawBlob.type,
+      );
+
+      const blob = new Blob([rawBlob], { type: exactMimeType });
       const blobUrl = window.URL.createObjectURL(blob);
 
       const link = document.createElement("a");
@@ -200,7 +249,7 @@ const FilePreview = ({
       console.error("Erro ao baixar arquivo:", error);
       window.open(url, "_blank");
     }
-  }, [url, token, original_name, name, protectedObjectUrl]);
+  }, [url, token, original_name, name, protectedObjectUrl, type]);
 
   const handleOpenExternal = () => {
     const mediaSrc = protectedObjectUrl || url;
@@ -236,11 +285,7 @@ const FilePreview = ({
           title="Ver imagem"
           disabled={loadingMedia}
         >
-          <FileImagePreview
-            src={mediaSrc}
-            alt={original_name}
-            loading="lazy"
-          />
+          <FileImagePreview src={mediaSrc} alt={original_name} loading="lazy" />
         </FileButton>
       );
     }
